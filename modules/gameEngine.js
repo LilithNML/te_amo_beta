@@ -160,10 +160,10 @@ export class GameEngine {
     
     checkLogros() { 
         const c = this.unlocked.size; 
-        logros.forEach(l => { 
+        this.logros.forEach(l => { 
             if (!this.achievedLogros.has(l.id) && c >= l.codigo_requerido) { 
                 this.achievedLogros.add(l.id); 
-                this.ui.showToast(`🏆 Logro: ${l.mensaje}`); 
+                this.ui.showToast(`Logro: ${l.mensaje}`); 
                 localStorage.setItem("logrosAlcanzados", JSON.stringify([...this.achievedLogros])); 
             } 
         }); 
