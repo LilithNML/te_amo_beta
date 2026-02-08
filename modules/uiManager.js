@@ -4,7 +4,6 @@
  */
 
 import { normalizeText } from './utils.js';
-import { herramientasExternas } from './data.js';
 import { descifrarArchivo } from './webCryptoDecryptor.js';
 
 export class UIManager {
