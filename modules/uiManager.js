@@ -7,7 +7,8 @@ import { normalizeText } from './utils.js';
 import { descifrarArchivo } from './webCryptoDecryptor.js';
 
 export class UIManager {
-    constructor() {
+        constructor(herramientas) {
+        this.herramientas = herramientas || [];
         this.elements = {
             input: document.getElementById("codeInput"),
             contentDiv: document.getElementById("contenido"),
