@@ -3,15 +3,15 @@
  * Actualizado con Botón de Pistas y correcciones de ID
  */
 
-import { mensajes, logros } from './data.js';
 import { normalizeText, levenshtein } from './utils.js';
 
 export class GameEngine {
-    constructor(uiManager, audioManager) {
-        this.ui = uiManager;
-        this.audio = audioManager;
-        this.mensajes = mensajes; // Importante: Asignamos a 'this' para que funcione en toda la clase
-        
+    constructor(uiManager, audioManager, mensajes, logros) {
+    this.ui = uiManager;
+    this.audio = audioManager;
+    this.mensajes = mensajes; 
+    this.logros = logros;
+
         this.unlocked = new Set(JSON.parse(localStorage.getItem("desbloqueados") || "[]"));
         this.favorites = new Set(JSON.parse(localStorage.getItem("favoritos") || "[]"));
         this.achievedLogros = new Set(JSON.parse(localStorage.getItem("logrosAlcanzados") || "[]"));
