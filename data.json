@@ -1,0 +1,47 @@
+{
+  "mensajes": {
+    "noviembre9": {
+      "type": "text",
+      "texto": "Mi amor:\n\nA veces me gusta cerrar los ojos y volver a ese primer momento en que coincidimos en Genshin. No fue casualidad, fue destino disfrazado de juego...",
+      "categoria": "Carta",
+      "pista": "El destino nos unió el día 9, en el mes donde el viento ya huele a invierno."
+    },
+    "luna": {
+      "type": "text",
+      "texto": "Te hablo desde la Luna,\nno la que cuelga del cielo,\nsino la que duerme en mi nombre...",
+      "categoria": "Poema",
+      "pista": "Nombre de satélite."
+    },
+    "batman": {
+      "type": "image_audio",
+      "audio": "assets/unlocked_content/audio/el-señor-de-la-noche.ogg",
+      "imagen": "assets/unlocked_content/images/no_se_rian.jpeg",
+      "categoria": "Audio",
+      "pista": "El señor de la noche."
+    }
+  },
+  "logros": [
+    {
+      "id": "primer_paso",
+      "codigo_requerido": 1,
+      "mensaje": "¡Primer paso desbloqueado! Hay muchos más esperándote."
+    },
+    {
+      "id": "cinco_secretos",
+      "codigo_requerido": 5,
+      "mensaje": "¡Cinco secretos revelados! Eres una gran exploradora."
+    },
+    {
+      "id": "diez_secretos",
+      "codigo_requerido": 10,
+      "mensaje": "¡10 Secretos! Tu curiosidad no tiene límites."
+    }
+  ],
+  "herramientasExternas": [
+    {
+      "nombre": "Calculadora de Destino",
+      "url": "https://ejemplo.com",
+      "icono": "fas fa-calculator"
+    }
+  ]
+}
