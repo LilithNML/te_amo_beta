@@ -28,7 +28,19 @@ export class GameEngine {
         this.ui.onCodeSelected = (code) => this.unlockCode(code, false);
         this.ui.onImportData = (data) => this.importProgress(data);
         this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes);
-        this.ui.renderAchievements(this.logros, this.unlocked, this.favorites, this.mensajes);
+        // Actualizar modal de logros
+        this.updateAchievementsModal();
+    }
+
+    // Actualizar modal de logros
+    updateAchievementsModal() {
+        this.ui.updateAchievementsModal(
+            this.unlocked, 
+            this.favorites, 
+            this.mensajes, 
+            this.logros, 
+            this.achievedLogros
+        );
     }
 
     setupEventListeners() {
@@ -150,6 +162,7 @@ export class GameEngine {
         this.ui.renderContent(data, key);
         this.ui.clearInput();
         this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes);
+        this.updateAchievementsModal(); // Actualizar modal de logros
     }
 
     toggleFavorite(code) { 
@@ -157,8 +170,7 @@ export class GameEngine {
         else this.favorites.add(code); 
         localStorage.setItem("favoritos", JSON.stringify([...this.favorites])); 
         this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes);
-        this.ui.renderAchievements(this.logros, this.unlocked, this.favorites, this.mensajes);
- 
+        this.updateAchievementsModal(); // Actualizar modal de logros
     }
     
     checkLogros() { 
@@ -173,11 +185,7 @@ export class GameEngine {
     }
     
     updateProgress() { this.ui.updateProgress(this.unlocked.size, Object.keys(this.mensajes).length); }
-    saveProgress() { 
-    localStorage.setItem("desbloqueados", JSON.stringify([...this.unlocked])); 
-    this.updateProgress(); 
-    this.ui.renderAchievements(this.logros, this.unlocked, this.favorites, this.mensajes);
-}
+    saveProgress() { localStorage.setItem("desbloqueados", JSON.stringify([...this.unlocked])); this.updateProgress(); }
     resetFailedAttempts() { this.failedAttempts = 0; localStorage.setItem("failedAttempts", "0"); }
     
     importProgress(data) { 
@@ -188,7 +196,8 @@ export class GameEngine {
         this.favorites = new Set(data.favorites || []); 
         this.achievedLogros = new Set(data.achievements || []); 
         this.saveProgress(); 
-        this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes); 
+        this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes);
+        this.updateAchievementsModal(); // Actualizar modal de logros
         this.ui.showToast("¡Progreso recuperado!"); 
     }
     
