@@ -7,7 +7,7 @@
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Courgette&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Courgette&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -37,8 +37,8 @@
   <nav id="dropdownMenu" class="dropdown-menu">
     <button id="menuHome"><i class="fas fa-home"></i> Inicio</button>
     <button id="menuShowUnlocked"><i class="fas fa-lock-open"></i> Colección</button>
-    <button id="showAchievementsBtn" class="menu-item"><i class="fas fa-trophy"></i> Mis Logros</button>
     <button id="menuFavorites"><i class="fas fa-heart"></i> Favoritos</button>
+    <button id="menuAchievements"><i class="fas fa-trophy"></i> Logros</button>
     <a href="https://lilithnml.github.io/love_arcade/" target="_blank" class="menu-link-button">
       <i class="fas fa-gamepad"></i> Love Arcade
     </a>
@@ -74,6 +74,74 @@
     <div id="toolsListContainer" class="tools-container"></div>
   </aside>
 
+  <!-- NUEVO: Modal de Logros -->
+  <div id="achievementsModal" class="achievements-modal">
+    <div class="achievements-modal-content">
+      <div class="achievements-modal-header">
+        <h2><i class="fas fa-trophy"></i> Tus Logros</h2>
+        <button id="closeAchievementsModal" class="close-modal-btn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Nivel y Título del Usuario -->
+      <div class="user-level-card">
+        <div class="level-badge">
+          <div class="level-number" id="userLevel">1</div>
+          <div class="level-label">Nivel</div>
+        </div>
+        <div class="level-info">
+          <h3 id="userTitle">Explorador Novato</h3>
+          <p id="userTitleDesc">Comenzando tu viaje de descubrimiento</p>
+          <div class="level-progress-bar">
+            <div class="level-progress-fill" id="levelProgressFill"></div>
+          </div>
+          <p class="level-progress-text" id="levelProgressText">0 / 5 para siguiente nivel</p>
+        </div>
+      </div>
+
+      <!-- Estadísticas Generales -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <i class="fas fa-unlock-alt stat-icon"></i>
+          <div class="stat-value" id="totalUnlocked">0</div>
+          <div class="stat-label">Secretos Descubiertos</div>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-fire stat-icon"></i>
+          <div class="stat-value" id="currentStreak">0</div>
+          <div class="stat-label">Racha (días)</div>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-clock stat-icon"></i>
+          <div class="stat-value" id="totalTime">0m</div>
+          <div class="stat-label">Tiempo Total</div>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-star stat-icon"></i>
+          <div class="stat-value" id="favoriteCount">0</div>
+          <div class="stat-label">Favoritos</div>
+        </div>
+      </div>
+
+      <!-- Categorías de Secretos -->
+      <div class="categories-section">
+        <h3 class="section-subtitle"><i class="fas fa-chart-pie"></i> Por Categoría</h3>
+        <div class="categories-grid" id="categoriesGrid">
+          <!-- Se llenará dinámicamente -->
+        </div>
+      </div>
+
+      <!-- Lista de Logros -->
+      <div class="achievements-list-section">
+        <h3 class="section-subtitle"><i class="fas fa-medal"></i> Logros Desbloqueados</h3>
+        <div class="achievements-grid" id="achievementsGrid">
+          <!-- Se llenará dinámicamente -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="app-scroll">
     <main class="container">
       <img src="assets/images/FullMoon.webp" alt="Luna Llena" class="header-img" />
@@ -94,6 +162,10 @@
         <div class="progress-bar-container">
           <div class="progress-bar-fill" style="width: 0%;"></div>
         </div>
+        <!-- Nuevo: Botón para ver logros -->
+        <button id="viewAchievementsBtn" class="button small-button achievements-btn">
+          <i class="fas fa-trophy"></i> Ver Logros y Estadísticas
+        </button>
       </div>
 
       <div class="unlocked-codes-section" id="unlockedSection" hidden>
@@ -121,35 +193,5 @@
       });
     }
   </script>
-  <div id="achievementsModal" class="modal-overlay hidden">
-  <div class="modal-content achievements-modal-container fade-in">
-    <div class="modal-header">
-      <h2 class="title-font">Nuestra Aventura</h2>
-      <button id="closeAchievements" class="close-btn">&times;</button>
-    </div>
-    
-    <div class="modal-body">
-      <div class="stats-grid">
-        <div class="stat-card">
-          <span class="stat-label">Tu Rango</span>
-          <span id="rankName" class="stat-value">Exploradora</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">Favoritos</span>
-          <span id="favCount" class="stat-value">0</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">Palabras Leídas</span>
-          <span id="wordCount" class="stat-value">0</span>
-        </div>
-      </div>
-
-      <h3 class="achievement-title">Medallas Desbloqueadas</h3>
-      <div id="achievementsGrid" class="achievements-grid">
-        </div>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
