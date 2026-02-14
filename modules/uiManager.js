@@ -29,33 +29,118 @@ export class UIManager {
             categoryFilter: document.getElementById("categoryFilter"),
             filterFavBtn: document.getElementById("filterFavBtn"),
             closeUnlockedBtn: document.getElementById("closeUnlockedBtn"),
-            // Logros / Achievements
+            // Nuevos elementos para el modal de logros
             achievementsModal: document.getElementById("achievementsModal"),
-            achievementsGrid: document.getElementById("achievementsGrid"),
-            showAchievementsBtn: document.getElementById("showAchievementsBtn"),
-            closeAchievements: document.getElementById("closeAchievements")
+            closeAchievementsModal: document.getElementById("closeAchievementsModal"),
+            viewAchievementsBtn: document.getElementById("viewAchievementsBtn"),
+            menuAchievements: document.getElementById("menuAchievements")
         };
-
-        // Listeners del modal de Logros
-        if (this.elements.showAchievementsBtn) {
-            this.elements.showAchievementsBtn.onclick = () => {
-                this.elements.achievementsModal.classList.remove("hidden");
-                this.elements.dropdownMenu.classList.add("hidden");
-            };
-        }
-        if (this.elements.closeAchievements) {
-            this.elements.closeAchievements.onclick = () => this.elements.achievementsModal.classList.add("hidden");
-        }
 
         this.cachedPassword = null; 
         this.showingFavoritesOnly = false;
         this.typewriterTimeout = null;
+        this.statsData = this.loadStatsData(); // Cargar estadísticas
 
         this.initTheme();
         this.setupMenuListeners();
         this.setupListListeners();
+        this.setupAchievementsModal(); // Nuevo
         this.initDynamicPlaceholder();
         setTimeout(() => this.initParticles(), 100); 
+    }
+
+    // Cargar estadísticas del localStorage
+    loadStatsData() {
+        return {
+            totalTime: parseInt(localStorage.getItem("totalTime") || "0"),
+            lastVisit: localStorage.getItem("lastVisit") || new Date().toDateString(),
+            currentStreak: parseInt(localStorage.getItem("currentStreak") || "0"),
+            longestStreak: parseInt(localStorage.getItem("longestStreak") || "0"),
+            firstVisit: localStorage.getItem("firstVisit") || new Date().toDateString()
+        };
+    }
+
+    // Actualizar estadísticas
+    updateStats() {
+        const today = new Date().toDateString();
+        const lastVisit = this.statsData.lastVisit;
+        
+        // Si es el primer día
+        if (!localStorage.getItem("firstVisit")) {
+            localStorage.setItem("firstVisit", today);
+            this.statsData.firstVisit = today;
+        }
+        
+        // Actualizar racha
+        if (lastVisit !== today) {
+            const yesterday = new Date(Date.now() - 86400000).toDateString();
+            if (lastVisit === yesterday) {
+                this.statsData.currentStreak++;
+            } else {
+                this.statsData.currentStreak = 1;
+            }
+            
+            if (this.statsData.currentStreak > this.statsData.longestStreak) {
+                this.statsData.longestStreak = this.statsData.currentStreak;
+                localStorage.setItem("longestStreak", this.statsData.longestStreak.toString());
+            }
+            
+            localStorage.setItem("currentStreak", this.statsData.currentStreak.toString());
+            localStorage.setItem("lastVisit", today);
+            this.statsData.lastVisit = today;
+        }
+        
+        // Incrementar tiempo (simulado, en realidad deberías usar un timer)
+        this.statsData.totalTime++;
+        localStorage.setItem("totalTime", this.statsData.totalTime.toString());
+    }
+
+    // Configurar modal de logros
+    setupAchievementsModal() {
+        if (this.elements.viewAchievementsBtn) {
+            this.elements.viewAchievementsBtn.addEventListener("click", () => this.openAchievementsModal());
+        }
+        
+        if (this.elements.menuAchievements) {
+            this.elements.menuAchievements.addEventListener("click", () => {
+                this.closeMenu();
+                this.openAchievementsModal();
+            });
+        }
+        
+        if (this.elements.closeAchievementsModal) {
+            this.elements.closeAchievementsModal.addEventListener("click", () => this.closeAchievementsModal());
+        }
+        
+        if (this.elements.achievementsModal) {
+            this.elements.achievementsModal.addEventListener("click", (e) => {
+                if (e.target === this.elements.achievementsModal) {
+                    this.closeAchievementsModal();
+                }
+            });
+        }
+    }
+
+    // Abrir modal de logros
+    openAchievementsModal() {
+        if (!this.elements.achievementsModal) return;
+        this.updateStats();
+        this.renderAchievementsModal();
+        this.elements.achievementsModal.classList.add("show");
+        document.body.style.overflow = "hidden";
+    }
+
+    // Cerrar modal de logros
+    closeAchievementsModal() {
+        if (!this.elements.achievementsModal) return;
+        this.elements.achievementsModal.classList.remove("show");
+        document.body.style.overflow = "";
+    }
+
+    // Renderizar modal de logros
+    renderAchievementsModal() {
+        // Esta función se definirá más adelante con los datos del juego
+        // Por ahora, solo preparamos la estructura
     }
 
     dismissKeyboard() { if (this.elements.input) this.elements.input.blur(); }
@@ -599,50 +684,205 @@ export class UIManager {
     
     exportProgress(){const d={unlocked:JSON.parse(localStorage.getItem("desbloqueados")||"[]"),favorites:JSON.parse(localStorage.getItem("favoritos")||"[]"),achievements:JSON.parse(localStorage.getItem("logrosAlcanzados")||"[]"),timestamp:new Date().toISOString()};const b=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`progreso_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(u);this.showToast("Progreso exportado");}
     handleImportFile(f){const r=new FileReader();r.onload=(e)=>{try{const d=JSON.parse(e.target.result);if(this.onImportData)this.onImportData(d);}catch(z){this.showToast("Archivo inválido");}};r.readAsText(f);}
+}
 
-    // --- LOGROS ---
-    renderAchievements(logros, unlockedSet, favoritesSet, mensajes) {
-        this.elements.achievementsGrid.innerHTML = "";
+    // ===========================================
+    // FUNCIONES PARA MODAL DE LOGROS
+    // ===========================================
+
+    // Actualizar el modal de logros con datos del juego
+    updateAchievementsModal(unlocked, favorites, mensajes, logros, achievedLogros) {
+        // Guardar los datos para uso posterior
+        this.gameData = { unlocked, favorites, mensajes, logros, achievedLogros };
+    }
+
+    // Renderizar el modal completo de logros
+    renderAchievementsModal() {
+        if (!this.gameData) return;
         
-        // 1. Calcular Métricas Extras (Mecánicas de enganche)
-        const totalWords = Array.from(unlockedSet).reduce((acc, code) => {
-            const m = mensajes[code];
-            // Contamos palabras del texto si existe
-            const words = (m && m.texto) ? m.texto.trim().split(/\s+/).length : 0;
-            return acc + words;
-        }, 0);
-
-        const totalTotal = Object.keys(mensajes).length;
-        const percent = (unlockedSet.size / totalTotal) * 100;
+        const { unlocked, favorites, mensajes, logros, achievedLogros } = this.gameData;
+        const totalCodes = Object.keys(mensajes).length;
+        const unlockedCount = unlocked.size;
+        const favoriteCount = favorites.size;
         
-        // Sistema de Rangos
-        let rank = "Novata";
-        if (percent > 20) rank = "Explorador";
-        if (percent > 40) rank = "Cariñosl";
-        if (percent > 60) rank = "Inseparable";
-        if (percent > 85) rank = "Alma Gemela";
-        if (percent >= 100) rank = "Dueño de mi ❤️";
+        // Calcular nivel y título del usuario
+        const levelData = this.calculateUserLevel(unlockedCount, totalCodes);
+        
+        // Renderizar nivel del usuario
+        this.renderUserLevel(levelData, unlockedCount, totalCodes);
+        
+        // Renderizar estadísticas
+        this.renderStats(unlockedCount, favoriteCount, totalCodes);
+        
+        // Renderizar categorías
+        this.renderCategories(unlocked, mensajes);
+        
+        // Renderizar logros
+        this.renderAchievements(logros, achievedLogros, unlockedCount);
+    }
 
-        document.getElementById("rankName").innerText = rank;
-        document.getElementById("favCount").innerText = favoritesSet.size;
-        document.getElementById("wordCount").innerText = totalWords;
+    // Calcular nivel del usuario
+    calculateUserLevel(unlockedCount, totalCodes) {
+        const levels = [
+            { level: 1, title: "Explorador Novato", desc: "Comenzando tu viaje de descubrimiento", required: 0 },
+            { level: 2, title: "Buscador Curioso", desc: "Tu curiosidad te lleva más lejos", required: 5 },
+            { level: 3, title: "Aventurero Dedicado", desc: "Cada secreto te acerca más", required: 10 },
+            { level: 4, title: "Cazador de Misterios", desc: "Los enigmas no pueden esconderse de ti", required: 20 },
+            { level: 5, title: "Detective del Corazón", desc: "Descubriendo el mapa de nuestro amor", required: 40 },
+            { level: 6, title: "Maestro de Secretos", desc: "Conoces más que nadie sobre nosotros", required: 70 },
+            { level: 7, title: "Guardián de Recuerdos", desc: "Cada momento está grabado en tu alma", required: 100 },
+            { level: 8, title: "Leyenda del Amor", desc: "Tu dedicación es infinita", required: 150 },
+            { level: 9, title: "Alma Gemela Completa", desc: "Has descubierto todos mis secretos", required: 223 }
+        ];
+        
+        let currentLevel = levels[0];
+        let nextLevel = levels[1];
+        
+        for (let i = 0; i < levels.length; i++) {
+            if (unlockedCount >= levels[i].required) {
+                currentLevel = levels[i];
+                nextLevel = levels[i + 1] || currentLevel;
+            } else {
+                break;
+            }
+        }
+        
+        const progressInLevel = unlockedCount - currentLevel.required;
+        const requiredForNext = nextLevel.required - currentLevel.required;
+        const progressPercent = nextLevel !== currentLevel 
+            ? (progressInLevel / requiredForNext) * 100 
+            : 100;
+        
+        return {
+            ...currentLevel,
+            nextLevel,
+            progressPercent,
+            progressText: nextLevel !== currentLevel 
+                ? `${progressInLevel} / ${requiredForNext} para siguiente nivel`
+                : "¡Nivel máximo alcanzado!"
+        };
+    }
 
-        // 2. Renderizar Logros desde data.json
-        logros.forEach(logro => {
-            const isUnlocked = unlockedSet.size >= logro.codigo_requerido;
-            const card = document.createElement("div");
-            card.className = `achievement-card ${isUnlocked ? 'unlocked' : 'locked'}`;
-            
-            const icon = isUnlocked ? 'fa-medal' : 'fa-lock';
-            const name = isUnlocked ? logro.id.replace(/_/g, ' ') : '???';
-            const desc = isUnlocked ? logro.mensaje : `Revela ${logro.codigo_requerido} secretos para ver esto`;
+    // Renderizar nivel del usuario
+    renderUserLevel(levelData, unlockedCount, totalCodes) {
+        const userLevel = document.getElementById("userLevel");
+        const userTitle = document.getElementById("userTitle");
+        const userTitleDesc = document.getElementById("userTitleDesc");
+        const levelProgressFill = document.getElementById("levelProgressFill");
+        const levelProgressText = document.getElementById("levelProgressText");
+        
+        if (userLevel) userLevel.textContent = levelData.level;
+        if (userTitle) userTitle.textContent = levelData.title;
+        if (userTitleDesc) userTitleDesc.textContent = levelData.desc;
+        if (levelProgressFill) levelProgressFill.style.width = `${levelData.progressPercent}%`;
+        if (levelProgressText) levelProgressText.textContent = levelData.progressText;
+    }
 
-            card.innerHTML = `
-                <i class="fas ${icon} badge-icon"></i>
-                <div class="achievement-name">${name.toUpperCase()}</div>
-                <div class="achievement-desc">${desc}</div>
+    // Renderizar estadísticas
+    renderStats(unlockedCount, favoriteCount, totalCodes) {
+        const totalUnlocked = document.getElementById("totalUnlocked");
+        const currentStreak = document.getElementById("currentStreak");
+        const totalTime = document.getElementById("totalTime");
+        const favoriteCountElem = document.getElementById("favoriteCount");
+        
+        if (totalUnlocked) totalUnlocked.textContent = `${unlockedCount}/${totalCodes}`;
+        if (currentStreak) currentStreak.textContent = this.statsData.currentStreak;
+        if (totalTime) {
+            const minutes = this.statsData.totalTime;
+            const hours = Math.floor(minutes / 60);
+            const remainingMinutes = minutes % 60;
+            totalTime.textContent = hours > 0 
+                ? `${hours}h ${remainingMinutes}m` 
+                : `${minutes}m`;
+        }
+        if (favoriteCountElem) favoriteCountElem.textContent = favoriteCount;
+    }
+
+    // Renderizar categorías
+    renderCategories(unlocked, mensajes) {
+        const categoriesGrid = document.getElementById("categoriesGrid");
+        if (!categoriesGrid) return;
+        
+        // Contar por categoría
+        const categories = {};
+        const categoryIcons = {
+            "Carta": "fa-envelope-open-text",
+            "Fotos": "fa-images",
+            "Videos": "fa-video",
+            "Pensamiento": "fa-brain",
+            "Playlist": "fa-music",
+            "Default": "fa-heart"
+        };
+        
+        for (const [code, data] of Object.entries(mensajes)) {
+            const category = data.categoria || "Otros";
+            if (!categories[category]) {
+                categories[category] = { total: 0, unlocked: 0 };
+            }
+            categories[category].total++;
+            if (unlocked.has(code)) {
+                categories[category].unlocked++;
+            }
+        }
+        
+        // Renderizar
+        let html = "";
+        for (const [category, stats] of Object.entries(categories)) {
+            const icon = categoryIcons[category] || categoryIcons["Default"];
+            const percentage = Math.round((stats.unlocked / stats.total) * 100);
+            html += `
+                <div class="category-card">
+                    <div class="category-icon"><i class="fas ${icon}"></i></div>
+                    <div class="category-name">${category}</div>
+                    <div class="category-count">${stats.unlocked}/${stats.total}</div>
+                    <div class="category-percentage" style="font-size: 0.8em; color: var(--text-medium); margin-top: 0.3rem;">
+                        ${percentage}%
+                    </div>
+                </div>
             `;
-            this.elements.achievementsGrid.appendChild(card);
-        });
+        }
+        
+        categoriesGrid.innerHTML = html;
+    }
+
+    // Renderizar logros
+    renderAchievements(logros, achievedLogros, unlockedCount) {
+        const achievementsGrid = document.getElementById("achievementsGrid");
+        if (!achievementsGrid) return;
+        
+        let html = "";
+        
+        for (const logro of logros) {
+            const isUnlocked = achievedLogros.has(logro.id);
+            const progress = Math.min(unlockedCount, logro.codigo_requerido);
+            const percentage = Math.round((progress / logro.codigo_requerido) * 100);
+            
+            html += `
+                <div class="achievement-card ${isUnlocked ? 'unlocked' : 'locked'}">
+                    <div class="achievement-icon-wrapper">
+                        <i class="fas ${isUnlocked ? 'fa-trophy' : 'fa-lock'}"></i>
+                    </div>
+                    <div class="achievement-info">
+                        <div class="achievement-title">
+                            ${isUnlocked ? logro.mensaje : '???'}
+                        </div>
+                        <div class="achievement-desc">
+                            ${isUnlocked 
+                                ? `¡Logro desbloqueado! Has descubierto ${logro.codigo_requerido} secretos.`
+                                : `Desbloquea ${logro.codigo_requerido} secretos para revelar este logro.`
+                            }
+                        </div>
+                        ${!isUnlocked ? `
+                            <div class="achievement-requirement">
+                                <i class="fas fa-chart-line"></i>
+                                Progreso: ${progress}/${logro.codigo_requerido} (${percentage}%)
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        achievementsGrid.innerHTML = html;
     }
 }
