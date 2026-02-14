@@ -1,5 +1,4 @@
-/** * modules/utils.js 
- */
+/** * modules/utils.js */
 
 export function normalizeText(text) {
     if (!text) return "";
