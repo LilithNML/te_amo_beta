@@ -28,6 +28,7 @@ export class GameEngine {
         this.ui.onCodeSelected = (code) => this.unlockCode(code, false);
         this.ui.onImportData = (data) => this.importProgress(data);
         this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes);
+        this.ui.renderAchievements(this.logros, this.unlocked, this.favorites, this.mensajes);
     }
 
     setupEventListeners() {
@@ -155,7 +156,9 @@ export class GameEngine {
         if (this.favorites.has(code)) this.favorites.delete(code); 
         else this.favorites.add(code); 
         localStorage.setItem("favoritos", JSON.stringify([...this.favorites])); 
-        this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes); 
+        this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes);
+        this.ui.renderAchievements(this.logros, this.unlocked, this.favorites, this.mensajes);
+ 
     }
     
     checkLogros() { 
@@ -170,7 +173,11 @@ export class GameEngine {
     }
     
     updateProgress() { this.ui.updateProgress(this.unlocked.size, Object.keys(this.mensajes).length); }
-    saveProgress() { localStorage.setItem("desbloqueados", JSON.stringify([...this.unlocked])); this.updateProgress(); }
+    saveProgress() { 
+    localStorage.setItem("desbloqueados", JSON.stringify([...this.unlocked])); 
+    this.updateProgress(); 
+    this.ui.renderAchievements(this.logros, this.unlocked, this.favorites, this.mensajes);
+}
     resetFailedAttempts() { this.failedAttempts = 0; localStorage.setItem("failedAttempts", "0"); }
     
     importProgress(data) { 
