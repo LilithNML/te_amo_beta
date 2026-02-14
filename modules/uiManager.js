@@ -28,8 +28,24 @@ export class UIManager {
             searchUnlocked: document.getElementById("searchUnlocked"),
             categoryFilter: document.getElementById("categoryFilter"),
             filterFavBtn: document.getElementById("filterFavBtn"),
-            closeUnlockedBtn: document.getElementById("closeUnlockedBtn")
+            closeUnlockedBtn: document.getElementById("closeUnlockedBtn"),
+            // Logros / Achievements
+            achievementsModal: document.getElementById("achievementsModal"),
+            achievementsGrid: document.getElementById("achievementsGrid"),
+            showAchievementsBtn: document.getElementById("showAchievementsBtn"),
+            closeAchievements: document.getElementById("closeAchievements")
         };
+
+        // Listeners del modal de Logros
+        if (this.elements.showAchievementsBtn) {
+            this.elements.showAchievementsBtn.onclick = () => {
+                this.elements.achievementsModal.classList.remove("hidden");
+                this.elements.dropdownMenu.classList.add("hidden");
+            };
+        }
+        if (this.elements.closeAchievements) {
+            this.elements.closeAchievements.onclick = () => this.elements.achievementsModal.classList.add("hidden");
+        }
 
         this.cachedPassword = null; 
         this.showingFavoritesOnly = false;
@@ -583,4 +599,50 @@ export class UIManager {
     
     exportProgress(){const d={unlocked:JSON.parse(localStorage.getItem("desbloqueados")||"[]"),favorites:JSON.parse(localStorage.getItem("favoritos")||"[]"),achievements:JSON.parse(localStorage.getItem("logrosAlcanzados")||"[]"),timestamp:new Date().toISOString()};const b=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`progreso_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(u);this.showToast("Progreso exportado");}
     handleImportFile(f){const r=new FileReader();r.onload=(e)=>{try{const d=JSON.parse(e.target.result);if(this.onImportData)this.onImportData(d);}catch(z){this.showToast("Archivo inválido");}};r.readAsText(f);}
+
+    // --- LOGROS ---
+    renderAchievements(logros, unlockedSet, favoritesSet, mensajes) {
+        this.elements.achievementsGrid.innerHTML = "";
+        
+        // 1. Calcular Métricas Extras (Mecánicas de enganche)
+        const totalWords = Array.from(unlockedSet).reduce((acc, code) => {
+            const m = mensajes[code];
+            // Contamos palabras del texto si existe
+            const words = (m && m.texto) ? m.texto.trim().split(/\s+/).length : 0;
+            return acc + words;
+        }, 0);
+
+        const totalTotal = Object.keys(mensajes).length;
+        const percent = (unlockedSet.size / totalTotal) * 100;
+        
+        // Sistema de Rangos
+        let rank = "Novata";
+        if (percent > 20) rank = "Explorador";
+        if (percent > 40) rank = "Cariñosl";
+        if (percent > 60) rank = "Inseparable";
+        if (percent > 85) rank = "Alma Gemela";
+        if (percent >= 100) rank = "Dueño de mi ❤️";
+
+        document.getElementById("rankName").innerText = rank;
+        document.getElementById("favCount").innerText = favoritesSet.size;
+        document.getElementById("wordCount").innerText = totalWords;
+
+        // 2. Renderizar Logros desde data.json
+        logros.forEach(logro => {
+            const isUnlocked = unlockedSet.size >= logro.codigo_requerido;
+            const card = document.createElement("div");
+            card.className = `achievement-card ${isUnlocked ? 'unlocked' : 'locked'}`;
+            
+            const icon = isUnlocked ? 'fa-medal' : 'fa-lock';
+            const name = isUnlocked ? logro.id.replace(/_/g, ' ') : '???';
+            const desc = isUnlocked ? logro.mensaje : `Revela ${logro.codigo_requerido} secretos para ver esto`;
+
+            card.innerHTML = `
+                <i class="fas ${icon} badge-icon"></i>
+                <div class="achievement-name">${name.toUpperCase()}</div>
+                <div class="achievement-desc">${desc}</div>
+            `;
+            this.elements.achievementsGrid.appendChild(card);
+        });
+    }
 }
