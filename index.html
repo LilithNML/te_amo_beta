@@ -37,6 +37,7 @@
   <nav id="dropdownMenu" class="dropdown-menu">
     <button id="menuHome"><i class="fas fa-home"></i> Inicio</button>
     <button id="menuShowUnlocked"><i class="fas fa-lock-open"></i> Colección</button>
+    <button id="showAchievementsBtn" class="menu-item"><i class="fas fa-trophy"></i> Mis Logros</button>
     <button id="menuFavorites"><i class="fas fa-heart"></i> Favoritos</button>
     <a href="https://lilithnml.github.io/love_arcade/" target="_blank" class="menu-link-button">
       <i class="fas fa-gamepad"></i> Love Arcade
@@ -120,5 +121,35 @@
       });
     }
   </script>
+  <div id="achievementsModal" class="modal-overlay hidden">
+  <div class="modal-content achievements-modal-container fade-in">
+    <div class="modal-header">
+      <h2 class="title-font">Nuestra Aventura</h2>
+      <button id="closeAchievements" class="close-btn">&times;</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-label">Tu Rango</span>
+          <span id="rankName" class="stat-value">Exploradora</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Favoritos</span>
+          <span id="favCount" class="stat-value">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Palabras Leídas</span>
+          <span id="wordCount" class="stat-value">0</span>
+        </div>
+      </div>
+
+      <h3 class="achievement-title">Medallas Desbloqueadas</h3>
+      <div id="achievementsGrid" class="achievements-grid">
+        </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
