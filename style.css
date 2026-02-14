@@ -596,3 +596,92 @@ body.dark-mode .typewriter-cursor::after {
     opacity: 0.45;
   }
 }
+
+/* --- ESTILOS DE LOGROS Y ESTADÍSTICAS --- */
+.achievements-modal-container {
+  max-width: 450px;
+  width: 92%;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--modal-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.04);
+  padding: 12px 8px;
+  border-radius: 16px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stat-label { font-size: 0.65rem; color: var(--text-medium); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-size: 0.9rem; color: var(--highlight-pink); font-weight: 600; }
+
+.achievement-title {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  color: var(--text-light);
+  font-family: var(--title-font);
+}
+
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.achievement-card {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 16px 12px;
+  border-radius: 20px;
+  text-align: center;
+  border: 1px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.achievement-card.unlocked {
+  border-color: rgba(255, 215, 0, 0.3);
+  background: linear-gradient(145deg, rgba(255, 215, 0, 0.05), rgba(255, 255, 255, 0.02));
+}
+
+.achievement-card.locked {
+  opacity: 0.4;
+  filter: grayscale(0.8);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.badge-icon {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.unlocked .badge-icon { color: #FFD700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+.locked .badge-icon { color: var(--text-medium); }
+
+.achievement-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-light);
+  line-height: 1.2;
+}
+
+.achievement-desc {
+  font-size: 0.65rem;
+  color: var(--text-medium);
+  line-height: 1.3;
+}
