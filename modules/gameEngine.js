@@ -133,10 +133,9 @@ export class GameEngine {
         // Usamos renderMessage para que se vea claro en un modal/alerta bonito
         this.ui.renderMessage("💡 Pista Disponible", pistaTexto);
         
-        // Efecto visual en el input
+        // Efecto visual en el input (sin abrir teclado)
         const input = this.ui.elements.input;
         if(input) {
-            input.focus();
             input.classList.add("shake");
             setTimeout(() => input.classList.remove("shake"), 500);
         }
@@ -195,6 +194,12 @@ export class GameEngine {
         this.unlocked = new Set(data.unlocked); 
         this.favorites = new Set(data.favorites || []); 
         this.achievedLogros = new Set(data.achievements || []); 
+        
+        // Guardar todo en localStorage
+        localStorage.setItem("desbloqueados", JSON.stringify([...this.unlocked]));
+        localStorage.setItem("favoritos", JSON.stringify([...this.favorites]));
+        localStorage.setItem("logrosAlcanzados", JSON.stringify([...this.achievedLogros]));
+        
         this.saveProgress(); 
         this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes);
         this.updateAchievementsModal(); // Actualizar modal de logros
