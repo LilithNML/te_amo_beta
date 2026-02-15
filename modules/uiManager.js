@@ -69,16 +69,28 @@ export class UIManager {
         if (!localStorage.getItem("firstVisit")) {
             localStorage.setItem("firstVisit", today);
             this.statsData.firstVisit = today;
+            this.statsData.currentStreak = 1;
+            localStorage.setItem("currentStreak", "1");
+            localStorage.setItem("lastVisit", today);
+            this.statsData.lastVisit = today;
+            return;
         }
         
         // Actualizar racha
         if (lastVisit !== today) {
-            const yesterday = new Date(Date.now() - 86400000).toDateString();
-            if (lastVisit === yesterday) {
+            const lastVisitDate = new Date(lastVisit);
+            const todayDate = new Date(today);
+            const diffTime = todayDate.getTime() - lastVisitDate.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 1) {
+                // Es el día siguiente, aumentar racha
                 this.statsData.currentStreak++;
-            } else {
+            } else if (diffDays > 1) {
+                // Se rompió la racha, reiniciar
                 this.statsData.currentStreak = 1;
             }
+            // Si diffDays === 0, es el mismo día, no hacer nada
             
             if (this.statsData.currentStreak > this.statsData.longestStreak) {
                 this.statsData.longestStreak = this.statsData.currentStreak;
@@ -101,13 +113,6 @@ export class UIManager {
             this.elements.viewAchievementsBtn.addEventListener("click", () => this.openAchievementsModal());
         }
         
-        if (this.elements.menuAchievements) {
-            this.elements.menuAchievements.addEventListener("click", () => {
-                this.closeMenu();
-                this.openAchievementsModal();
-            });
-        }
-        
         if (this.elements.closeAchievementsModal) {
             this.elements.closeAchievementsModal.addEventListener("click", () => this.closeAchievementsModal());
         }
@@ -124,6 +129,10 @@ export class UIManager {
     // Abrir modal de logros
     openAchievementsModal() {
         if (!this.elements.achievementsModal) return;
+        // Cerrar menú desplegable si está abierto
+        if (this.elements.dropdownMenu) {
+            this.elements.dropdownMenu.classList.remove("show");
+        }
         this.updateStats();
         this.renderAchievementsModal();
         this.elements.achievementsModal.classList.add("show");
@@ -630,6 +639,7 @@ export class UIManager {
         this.bindMenuAction("menuHome",()=>{this.toggleUnlockedPanel(0);window.scrollTo({top:0,behavior:'smooth'});});
         this.bindMenuAction("menuShowUnlocked",()=>this.toggleUnlockedPanel(1));
         this.bindMenuAction("menuFavorites",()=>{this.toggleUnlockedPanel(1);this.showingFavoritesOnly=1;this.updateFilterUI();this.triggerListFilter();});
+        this.bindMenuAction("menuAchievements",()=>this.openAchievementsModal());
         this.bindMenuAction("menuDarkMode",()=>this.toggleDarkMode());
         this.bindMenuAction("menuAudio",()=>this.openPanel(this.elements.audioPanel));
         this.bindMenuAction("menuTools",()=>{this.renderTools();this.openPanel(this.elements.toolsPanel);});
