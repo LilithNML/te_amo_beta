@@ -181,7 +181,6 @@ export class UIManager {
     }
 
     // --- VISUALES ---
-    async initParticles() {
     initDynamicPlaceholder() {
         const frases = ["Escribe aquí...", "Una fecha especial...", "¿Nuestro lugar?", "Un apodo...", "Nombre de canción...", "Batman"];
         let index = 0;
@@ -929,7 +928,6 @@ export class UIManager {
         
         achievementsGrid.innerHTML = html;
     }
-}
 
     // ===========================================
     // SALUDO DINÁMICO
