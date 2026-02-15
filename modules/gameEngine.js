@@ -16,7 +16,7 @@ export class GameEngine {
         this.favorites = new Set(JSON.parse(localStorage.getItem("favoritos") || "[]"));
         this.achievedLogros = new Set(JSON.parse(localStorage.getItem("logrosAlcanzados") || "[]"));
         this.failedAttempts = parseInt(localStorage.getItem("failedAttempts") || "0");
-        this.MAX_FAILED_ATTEMPTS = 5;
+        this.MAX_FAILED_ATTEMPTS = 3; // Reducido a 3 para activar la luna más rápido
         
         this.init();
     }
@@ -30,6 +30,8 @@ export class GameEngine {
         this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes);
         // Actualizar modal de logros
         this.updateAchievementsModal();
+        // Verificar si mostrar la luna desde el inicio
+        this.checkMoonHintVisibility();
     }
 
     // Actualizar modal de logros
@@ -78,7 +80,16 @@ export class GameEngine {
     handleIncorrectInput(normalizedInput) {
         this.audio.playIncorrect();
         this.ui.showError();
-        if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+        
+        // Feedback háptico visual - shake animation
+        const inputContainer = document.querySelector('.input-container');
+        if (inputContainer) {
+            inputContainer.classList.add('error-shake');
+            setTimeout(() => inputContainer.classList.remove('error-shake'), 400);
+        }
+        
+        // Vibración en dispositivos compatibles
+        if (navigator.vibrate) navigator.vibrate(200);
 
         this.failedAttempts++;
         localStorage.setItem("failedAttempts", this.failedAttempts.toString());
@@ -92,15 +103,101 @@ export class GameEngine {
 
         if (closest) {
              this.ui.renderMessage("Vas muy bien...", `Parece que intentas escribir <strong>"${closest}"</strong>. ¡Revisa!`);
+             this.checkMoonHintVisibility(); // Verificar si mostrar la luna
              return;
         }
 
         if (this.failedAttempts >= this.MAX_FAILED_ATTEMPTS) {
-            this.giveHint(); // Da pista automática si falla mucho
-            this.resetFailedAttempts();
+            this.showMoonHint(); // Mostrar la luna mágica
         } else {
             this.ui.renderMessage("Código Incorrecto", `Intento ${this.failedAttempts} de ${this.MAX_FAILED_ATTEMPTS} para recibir una ayuda.`);
         }
+        
+        this.checkMoonHintVisibility(); // Verificar si mostrar la luna
+    }
+
+    // Verificar si mostrar el icono de la luna
+    checkMoonHintVisibility() {
+        const moonHint = document.getElementById('moonHint');
+        if (!moonHint) return;
+        
+        if (this.failedAttempts >= this.MAX_FAILED_ATTEMPTS) {
+            moonHint.hidden = false;
+            // Agregar listener si no existe
+            if (!moonHint.onclick) {
+                moonHint.onclick = () => this.giveSmartHint();
+            }
+        } else {
+            moonHint.hidden = true;
+        }
+    }
+
+    // Mostrar luna de pista
+    showMoonHint() {
+        const moonHint = document.getElementById('moonHint');
+        if (moonHint) {
+            moonHint.hidden = false;
+            // Agregar listener si no existe
+            if (!moonHint.onclick) {
+                moonHint.onclick = () => this.giveSmartHint();
+            }
+        }
+    }
+
+    // Ocultar luna de pista
+    hideMoonHint() {
+        const moonHint = document.getElementById('moonHint');
+        if (moonHint) {
+            moonHint.hidden = true;
+        }
+    }
+
+    // Pista inteligente basada en levenshtein
+    giveSmartHint() {
+        const input = this.ui.elements.input;
+        const inputValue = input ? input.value.trim() : "";
+        
+        if (!inputValue || inputValue === "") {
+            this.giveHint(); // Si no hay input, dar pista normal
+            return;
+        }
+        
+        const normalizedInput = normalizeText(inputValue);
+        const allCodes = Object.keys(this.mensajes);
+        const lockedCodes = allCodes.filter(code => !this.unlocked.has(code));
+        
+        if (lockedCodes.length === 0) {
+            this.ui.showToast("🎉 ¡Ya has descubierto todos los secretos!");
+            this.ui.triggerConfetti();
+            this.hideMoonHint();
+            return;
+        }
+        
+        // Buscar código más cercano usando levenshtein
+        let closest = null;
+        let minDist = Infinity;
+        
+        for (const code of lockedCodes) {
+            const normalizedCode = normalizeText(code);
+            const dist = levenshtein(normalizedInput, normalizedCode);
+            if (dist < minDist) {
+                minDist = dist;
+                closest = code;
+            }
+        }
+        
+        const data = this.mensajes[closest];
+        let message = "";
+        
+        if (minDist <= 2) {
+            // Pista "caliente" - muy cerca
+            message = `🌕 La luna te susurra: <strong>Estás muy cerca...</strong><br><br>${data.pista || 'Sigue intentando, casi lo logras.'}`;
+        } else {
+            // Pista general
+            message = `🌕 La luna te guía:<br><br>${data.pista || 'Sigue buscando... este secreto es muy misterioso.'}`;
+        }
+        
+        this.ui.renderMessage("💡 Mensaje de la Luna", message);
     }
 
     /**
@@ -162,6 +259,7 @@ export class GameEngine {
         this.ui.clearInput();
         this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes);
         this.updateAchievementsModal(); // Actualizar modal de logros
+        this.hideMoonHint(); // Ocultar la luna al acertar
     }
 
     toggleFavorite(code) { 
@@ -185,25 +283,49 @@ export class GameEngine {
     
     updateProgress() { this.ui.updateProgress(this.unlocked.size, Object.keys(this.mensajes).length); }
     saveProgress() { localStorage.setItem("desbloqueados", JSON.stringify([...this.unlocked])); this.updateProgress(); }
-    resetFailedAttempts() { this.failedAttempts = 0; localStorage.setItem("failedAttempts", "0"); }
+    resetFailedAttempts() { 
+        this.failedAttempts = 0; 
+        localStorage.setItem("failedAttempts", "0"); 
+        this.hideMoonHint(); // Ocultar la luna al resetear
+    }
     
     importProgress(data) { 
         if (!data.unlocked || !Array.isArray(data.unlocked)) { 
             this.ui.showToast("Error: Archivo incompatible"); return; 
         } 
+        
+        // Importar códigos, favoritos y logros
         this.unlocked = new Set(data.unlocked); 
         this.favorites = new Set(data.favorites || []); 
         this.achievedLogros = new Set(data.achievements || []); 
         
-        // Guardar todo en localStorage
+        // Guardar datos básicos en localStorage
         localStorage.setItem("desbloqueados", JSON.stringify([...this.unlocked]));
         localStorage.setItem("favoritos", JSON.stringify([...this.favorites]));
         localStorage.setItem("logrosAlcanzados", JSON.stringify([...this.achievedLogros]));
         
+        // Importar métricas si existen (Backup 2.0)
+        if (data.metrics) {
+            localStorage.setItem("totalTime", data.metrics.totalTime?.toString() || "0");
+            localStorage.setItem("currentStreak", data.metrics.currentStreak?.toString() || "0");
+            localStorage.setItem("longestStreak", data.metrics.longestStreak?.toString() || "0");
+            if (data.metrics.firstVisit) localStorage.setItem("firstVisit", data.metrics.firstVisit);
+            if (data.metrics.lastVisit) localStorage.setItem("lastVisit", data.metrics.lastVisit);
+        }
+        
+        // Importar fecha del oráculo si existe (prevenir trampa)
+        if (data.oracle && data.oracle.lastOracleDate) {
+            localStorage.setItem("lastOracleDate", data.oracle.lastOracleDate);
+        }
+        
         this.saveProgress(); 
         this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes);
         this.updateAchievementsModal(); // Actualizar modal de logros
-        this.ui.showToast("¡Progreso recuperado!"); 
+        
+        // Recargar estadísticas en UI
+        this.ui.statsData = this.ui.loadStatsData();
+        
+        this.ui.showToast("✨ ¡Progreso completo restaurado!"); 
     }
     
     resetProgress() { if (confirm("¿Borrar todo?")) { localStorage.clear(); location.reload(); } }
