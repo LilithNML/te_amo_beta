@@ -1,6 +1,6 @@
 /**
  * modules/uiManager.js
- * Versión Final Producción: Streaming Seguro + Glassmorphism (Sin Easter Eggs)
+ * Versión Final Producción:Streaming Seguro + Glassmorphism
  */
 
 import { normalizeText } from './utils.js';
