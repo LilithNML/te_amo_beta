@@ -7,8 +7,9 @@ import { normalizeText } from './utils.js';
 import { descifrarArchivo } from './webCryptoDecryptor.js';
 
 export class UIManager {
-        constructor(herramientas) {
+        constructor(herramientas, oraclePhrases) {
         this.herramientas = herramientas || [];
+        this.oraclePhrases = oraclePhrases || [];
         this.elements = {
             input: document.getElementById("codeInput"),
             contentDiv: document.getElementById("contenido"),
@@ -33,7 +34,18 @@ export class UIManager {
             achievementsModal: document.getElementById("achievementsModal"),
             closeAchievementsModal: document.getElementById("closeAchievementsModal"),
             viewAchievementsBtn: document.getElementById("viewAchievementsBtn"),
-            menuAchievements: document.getElementById("menuAchievements")
+            menuAchievements: document.getElementById("menuAchievements"),
+            // Nuevos elementos para el oráculo
+            oracleModal: document.getElementById("oracleModal"),
+            closeOracleModal: document.getElementById("closeOracleModal"),
+            oraclePhrase: document.getElementById("oraclePhrase"),
+            menuOracle: document.getElementById("menuOracle"),
+            // Elementos para modo lectura
+            readingModeModal: document.getElementById("readingModeModal"),
+            exitReadingMode: document.getElementById("exitReadingMode"),
+            readingModeText: document.getElementById("readingModeText"),
+            // Saludo dinámico
+            dynamicGreeting: document.querySelector(".dynamic-greeting")
         };
 
         this.cachedPassword = null; 
@@ -44,9 +56,11 @@ export class UIManager {
         this.initTheme();
         this.setupMenuListeners();
         this.setupListListeners();
-        this.setupAchievementsModal(); // Nuevo
+        this.setupAchievementsModal(); // Configurar modal de logros
+        this.setupOracleModal(); // Configurar modal del oráculo
+        this.setupReadingMode(); // Configurar modo lectura
         this.initDynamicPlaceholder();
-        setTimeout(() => this.initParticles(), 100); 
+        this.updateDynamicGreeting(); // Actualizar saludo
     }
 
     // Cargar estadísticas del localStorage
@@ -168,24 +182,6 @@ export class UIManager {
 
     // --- VISUALES ---
     async initParticles() {
-        // @ts-ignore
-        if (typeof tsParticles === 'undefined') return;
-        // @ts-ignore
-        await tsParticles.load('tsparticles', {
-            fpsLimit: 60, fullScreen: { enable: false },
-            particles: {
-                number: { value: 30, density: { enable: true, area: 800 } },
-                color: { value: ["#ffffff", "#ff7aa8", "#ffd700"] },
-                shape: { type: "circle" },
-                opacity: { value: 0.7, random: true, animation: { enable: true, speed: 1, minimumValue: 0.3 } },
-                size: { value: 3, random: true, animation: { enable: true, speed: 2 } },
-                move: { enable: true, speed: 0.6, direction: "none", random: true, outModes: "out" }
-            },
-            interactivity: { events: { onHover: { enable: true, mode: "bubble" }, onClick: { enable: true, mode: "push" } } },
-            detectRetina: true
-        });
-    }
-
     initDynamicPlaceholder() {
         const frases = ["Escribe aquí...", "Una fecha especial...", "¿Nuestro lugar?", "Un apodo...", "Nombre de canción...", "Batman"];
         let index = 0;
@@ -323,12 +319,21 @@ export class UIManager {
             case "text":
                 const pText = document.createElement("p");
                 pText.className = "mensaje-texto";
+                pText.style.position = "relative"; // Para posicionar el botón
+                
                 if (data.categoria && ['pensamiento'].includes(data.categoria.toLowerCase())) {
                     this.typeWriterEffect(pText, data.texto);
                 } else {
                     pText.textContent = data.texto;
                 }
+                
                 container.appendChild(pText);
+                
+                // Agregar botón de modo lectura si el texto es largo
+                const readingBtn = this.addReadingModeButton(data.texto);
+                if (readingBtn) {
+                    container.appendChild(readingBtn);
+                }
                 break;
             case "audio":
                 const audio = document.createElement("audio");
@@ -640,6 +645,7 @@ export class UIManager {
         this.bindMenuAction("menuShowUnlocked",()=>this.toggleUnlockedPanel(1));
         this.bindMenuAction("menuFavorites",()=>{this.toggleUnlockedPanel(1);this.showingFavoritesOnly=1;this.updateFilterUI();this.triggerListFilter();});
         this.bindMenuAction("menuAchievements",()=>this.openAchievementsModal());
+        this.bindMenuAction("menuOracle",()=>this.openOracleModal());
         this.bindMenuAction("menuDarkMode",()=>this.toggleDarkMode());
         this.bindMenuAction("menuAudio",()=>this.openPanel(this.elements.audioPanel));
         this.bindMenuAction("menuTools",()=>{this.renderTools();this.openPanel(this.elements.toolsPanel);});
@@ -692,7 +698,36 @@ export class UIManager {
         if(vc===0)this.elements.unlockedList.innerHTML='<p style="text-align:center;width:100%;opacity:0.7">Sin resultados.</p>';
     }
     
-    exportProgress(){const d={unlocked:JSON.parse(localStorage.getItem("desbloqueados")||"[]"),favorites:JSON.parse(localStorage.getItem("favoritos")||"[]"),achievements:JSON.parse(localStorage.getItem("logrosAlcanzados")||"[]"),timestamp:new Date().toISOString()};const b=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`progreso_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(u);this.showToast("Progreso exportado");}
+    exportProgress(){
+        const exportData = {
+            unlocked: JSON.parse(localStorage.getItem("desbloqueados")||"[]"),
+            favorites: JSON.parse(localStorage.getItem("favoritos")||"[]"),
+            achievements: JSON.parse(localStorage.getItem("logrosAlcanzados")||"[]"),
+            metrics: {
+                totalTime: parseInt(localStorage.getItem("totalTime") || "0"),
+                currentStreak: parseInt(localStorage.getItem("currentStreak") || "0"),
+                longestStreak: parseInt(localStorage.getItem("longestStreak") || "0"),
+                firstVisit: localStorage.getItem("firstVisit") || null,
+                lastVisit: localStorage.getItem("lastVisit") || null
+            },
+            oracle: {
+                lastOracleDate: localStorage.getItem("lastOracleDate") || null
+            },
+            metadata: {
+                appVersion: "2.0",
+                exportedAt: new Date().toISOString()
+            }
+        };
+        
+        const b=new Blob([JSON.stringify(exportData,null,2)],{type:"application/json"});
+        const u=URL.createObjectURL(b);
+        const a=document.createElement("a");
+        a.href=u;
+        a.download=`progreso_completo_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(u);
+        this.showToast("✨ Backup completo exportado");
+    }
     handleImportFile(f){const r=new FileReader();r.onload=(e)=>{try{const d=JSON.parse(e.target.result);if(this.onImportData)this.onImportData(d);}catch(z){this.showToast("Archivo inválido");}};r.readAsText(f);}
 
     // ===========================================
@@ -893,5 +928,140 @@ export class UIManager {
         }
         
         achievementsGrid.innerHTML = html;
+    }
+}
+
+    // ===========================================
+    // SALUDO DINÁMICO
+    // ===========================================
+    
+    updateDynamicGreeting() {
+        if (!this.elements.dynamicGreeting) return;
+        
+        const hour = new Date().getHours();
+        let greeting = "";
+        
+        if (hour >= 6 && hour < 12) {
+            greeting = "¡Buenos días, mi amor! ¿Listo para descubrir un nuevo secreto hoy?";
+        } else if (hour >= 12 && hour < 20) {
+            greeting = "Buenas tardes, cielo. Un pequeño código para alegrar tu tarde...";
+        } else if (hour >= 20 && hour <= 23) {
+            greeting = "Buenas noches, cariño. ¿Un último secreto antes de dormir?";
+        } else {
+            greeting = "Es tarde, descansa... pero sé que tu curiosidad no duerme.";
+        }
+        
+        this.elements.dynamicGreeting.textContent = greeting;
+    }
+
+    // ===========================================
+    // ORÁCULO DE HOY
+    // ===========================================
+    
+    setupOracleModal() {
+        if (this.elements.menuOracle) {
+            this.elements.menuOracle.addEventListener("click", () => this.openOracleModal());
+        }
+        
+        if (this.elements.closeOracleModal) {
+            this.elements.closeOracleModal.addEventListener("click", () => this.closeOracleModal());
+        }
+        
+        if (this.elements.oracleModal) {
+            this.elements.oracleModal.addEventListener("click", (e) => {
+                if (e.target === this.elements.oracleModal) {
+                    this.closeOracleModal();
+                }
+            });
+        }
+    }
+
+    openOracleModal() {
+        if (!this.elements.oracleModal || !this.elements.oraclePhrase) return;
+        
+        // Cerrar menú desplegable
+        if (this.elements.dropdownMenu) {
+            this.elements.dropdownMenu.classList.remove("show");
+        }
+        
+        // Verificar cooldown diario
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const lastOracleDate = localStorage.getItem("lastOracleDate");
+        
+        if (lastOracleDate === today) {
+            // Ya usó el oráculo hoy
+            this.elements.oraclePhrase.textContent = "La luna te ha compartido su sabiduría por hoy. Vuelve mañana para recibir más amor.";
+            this.elements.oracleModal.classList.add("show");
+            document.body.style.overflow = "hidden";
+            return;
+        }
+        
+        // Seleccionar frase aleatoria
+        if (this.oraclePhrases.length > 0) {
+            const randomIndex = Math.floor(Math.random() * this.oraclePhrases.length);
+            const phrase = this.oraclePhrases[randomIndex];
+            
+            this.elements.oraclePhrase.textContent = phrase;
+            
+            // Guardar fecha de uso
+            localStorage.setItem("lastOracleDate", today);
+            
+            // Confetti especial
+            this.triggerConfetti();
+        }
+        
+        this.elements.oracleModal.classList.add("show");
+        document.body.style.overflow = "hidden";
+    }
+
+    closeOracleModal() {
+        if (!this.elements.oracleModal) return;
+        this.elements.oracleModal.classList.remove("show");
+        document.body.style.overflow = "";
+    }
+
+    // ===========================================
+    // MODO LECTURA ENVOLVENTE
+    // ===========================================
+    
+    setupReadingMode() {
+        if (this.elements.exitReadingMode) {
+            this.elements.exitReadingMode.addEventListener("click", () => this.closeReadingMode());
+        }
+        
+        if (this.elements.readingModeModal) {
+            this.elements.readingModeModal.addEventListener("click", (e) => {
+                if (e.target === this.elements.readingModeModal) {
+                    this.closeReadingMode();
+                }
+            });
+        }
+    }
+
+    openReadingMode(text) {
+        if (!this.elements.readingModeModal || !this.elements.readingModeText) return;
+        
+        this.elements.readingModeText.textContent = text;
+        this.elements.readingModeModal.classList.add("show");
+        document.body.style.overflow = "hidden";
+    }
+
+    closeReadingMode() {
+        if (!this.elements.readingModeModal) return;
+        this.elements.readingModeModal.classList.remove("show");
+        document.body.style.overflow = "";
+    }
+
+    // Modificar renderContent para incluir botón de modo lectura si el texto es largo
+    addReadingModeButton(text) {
+        if (text.length > 300) {
+            const btn = document.createElement("button");
+            btn.className = "expand-reading-btn";
+            btn.innerHTML = '<i class="fas fa-expand"></i>';
+            btn.title = "Modo lectura";
+            btn.onclick = () => this.openReadingMode(text);
+            return btn;
+        }
+        return null;
     }
 }
