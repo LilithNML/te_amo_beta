@@ -39,6 +39,7 @@
     <button id="menuShowUnlocked"><i class="fas fa-lock-open"></i> Colección</button>
     <button id="menuFavorites"><i class="fas fa-heart"></i> Favoritos</button>
     <button id="menuAchievements"><i class="fas fa-trophy"></i> Logros</button>
+    <button id="menuOracle"><i class="fas fa-moon"></i> Oráculo de Hoy</button>
     <a href="https://lilithnml.github.io/love_arcade/" target="_blank" class="menu-link-button">
       <i class="fas fa-gamepad"></i> Love Arcade
     </a>
@@ -142,16 +143,49 @@
     </div>
   </div>
 
+  <!-- NUEVO: Modal del Oráculo -->
+  <div id="oracleModal" class="oracle-modal">
+    <div class="oracle-modal-content">
+      <div class="oracle-moon-container">
+        <div class="oracle-moon-glow"></div>
+        <i class="fas fa-moon oracle-moon-icon"></i>
+      </div>
+      <h2 class="oracle-title">El Oráculo de Hoy</h2>
+      <p class="oracle-phrase" id="oraclePhrase"><!-- Frase del día --></p>
+      <button id="closeOracleModal" class="button oracle-close-btn">
+        <i class="fas fa-heart"></i> Gracias
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal de Modo Lectura -->
+  <div id="readingModeModal" class="reading-mode-modal">
+    <div class="reading-mode-content">
+      <button id="exitReadingMode" class="exit-reading-btn" title="Salir del modo lectura">
+        <i class="fas fa-times"></i>
+      </button>
+      <div id="readingModeText" class="reading-mode-text">
+        <!-- Texto se insertará dinámicamente -->
+      </div>
+    </div>
+  </div>
+
   <div id="app-scroll">
     <main class="container">
       <img src="assets/images/FullMoon.webp" alt="Luna Llena" class="header-img" />
       <h1>Un Secreto Para Ti</h1>
-      <p class="intro-text">Bienvenido, mi amor. Introduce un código secreto para descubrir nuestras sorpresas.</p>
+      <p class="intro-text dynamic-greeting">Bienvenido, mi amor. Introduce un código secreto para descubrir nuestras sorpresas.</p>
 
       <div class="input-container">
         <input type="text" id="codeInput" placeholder="Escribe aquí..." autocomplete="off" />
         <button id="checkBtn" class="button" title="Verificar"><i class="fas fa-paper-plane"></i> Verificar</button>
         <button id="hintBtn" class="button" title="Pedir una pista"><i class="fas fa-lightbulb"></i></button>
+      </div>
+
+      <!-- Icono de Luna para pistas inteligentes (oculto por defecto) -->
+      <div id="moonHint" class="moon-hint" hidden>
+        <div class="moon-pulse"></div>
+        <i class="fas fa-moon"></i>
       </div>
 
       <div id="contenido" class="contenido-container fade-in" hidden></div>
