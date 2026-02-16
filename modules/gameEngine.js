@@ -113,139 +113,24 @@ export class GameEngine {
 
         if (closest) {
              this.ui.renderMessage("Vas muy bien...", `Parece que intentas escribir <strong>"${closest}"</strong>. ¡Revisa!`);
-             this.checkMoonHintVisibility(); // Verificar si mostrar la luna
+             this.checkMoonVisibility(); // Verificar fase de la luna
              return;
         }
 
-        if (this.failedAttempts >= this.MAX_FAILED_ATTEMPTS) {
-            this.showMoonHint(); // Mostrar la luna mágica
+        // Mostrar mensaje según fase de luna
+        let message = "Código Incorrecto.";
+        if (this.failedAttempts >= 7) {
+            message = "Código Incorrecto. La Luna Llena brilla para guiarte...";
+        } else if (this.failedAttempts >= 5) {
+            message = "Código Incorrecto. El Cuarto Creciente se ilumina...";
+        } else if (this.failedAttempts >= 3) {
+            message = "Código Incorrecto. La Luna Creciente aparece...";
         } else {
-            this.ui.renderMessage("Código Incorrecto", `Intento ${this.failedAttempts} de ${this.MAX_FAILED_ATTEMPTS} para recibir una ayuda.`);
+            message = `Código Incorrecto. Intento ${this.failedAttempts} de 3.`;
         }
         
-        this.checkMoonHintVisibility(); // Verificar si mostrar la luna
-    }
-
-    // Verificar si mostrar el icono de la luna
-    checkMoonHintVisibility() {
-        const moonHint = document.getElementById('moonHint');
-        if (!moonHint) return;
-        
-        if (this.failedAttempts >= this.MAX_FAILED_ATTEMPTS) {
-            moonHint.hidden = false;
-            // Agregar listener si no existe
-            if (!moonHint.onclick) {
-                moonHint.onclick = () => this.giveSmartHint();
-            }
-        } else {
-            moonHint.hidden = true;
-        }
-    }
-
-    // Mostrar luna de pista
-    showMoonHint() {
-        const moonHint = document.getElementById('moonHint');
-        if (moonHint) {
-            moonHint.hidden = false;
-            // Agregar listener si no existe
-            if (!moonHint.onclick) {
-                moonHint.onclick = () => this.giveSmartHint();
-            }
-        }
-    }
-
-    // Ocultar luna de pista
-    hideMoonHint() {
-        const moonHint = document.getElementById('moonHint');
-        if (moonHint) {
-            moonHint.hidden = true;
-        }
-    }
-
-    // Pista inteligente basada en levenshtein
-    giveSmartHint() {
-        const input = this.ui.elements.input;
-        const inputValue = input ? input.value.trim() : "";
-        
-        if (!inputValue || inputValue === "") {
-            this.giveHint(); // Si no hay input, dar pista normal
-            return;
-        }
-        
-        const normalizedInput = normalizeText(inputValue);
-        const allCodes = Object.keys(this.mensajes);
-        const lockedCodes = allCodes.filter(code => !this.unlocked.has(code));
-        
-        if (lockedCodes.length === 0) {
-            this.ui.showToast("🎉 ¡Ya has descubierto todos los secretos!");
-            this.ui.triggerConfetti();
-            this.hideMoonHint();
-            return;
-        }
-        
-        // Buscar código más cercano usando levenshtein
-        let closest = null;
-        let minDist = Infinity;
-        
-        for (const code of lockedCodes) {
-            const normalizedCode = normalizeText(code);
-            const dist = levenshtein(normalizedInput, normalizedCode);
-            if (dist < minDist) {
-                minDist = dist;
-                closest = code;
-            }
-        }
-        
-        const data = this.mensajes[closest];
-        let message = "";
-        
-        if (minDist <= 2) {
-            // Pista "caliente" - muy cerca
-            message = `🌕 La luna te susurra: <strong>Estás muy cerca...</strong><br><br>${data.pista || 'Sigue intentando, casi lo logras.'}`;
-        } else {
-            // Pista general
-            message = `🌕 La luna te guía:<br><br>${data.pista || 'Sigue buscando... este secreto es muy misterioso.'}`;
-        }
-        
-        this.ui.renderMessage("💡 Mensaje de la Luna", message);
-    }
-
-    /**
-     * Busca un código bloqueado al azar y muestra su pista.
-     * Unificado para funcionar tanto con el botón como automáticamente.
-     */
-    giveHint() {
-        // Obtener todos los códigos
-        const allCodes = Object.keys(this.mensajes);
-        
-        // Filtrar solo los que NO han sido descubiertos
-        const lockedCodes = allCodes.filter(code => !this.unlocked.has(code));
-
-        if (lockedCodes.length === 0) {
-            this.ui.showToast("🎉 ¡Eres increíble! Ya has descubierto todos los secretos.");
-            this.ui.triggerConfetti();
-            return;
-        }
-
-        // Elegir uno al azar
-        const randomCode = lockedCodes[Math.floor(Math.random() * lockedCodes.length)];
-        const data = this.mensajes[randomCode];
-
-        // Obtener la pista o mensaje por defecto
-        const pistaTexto = data.pista && data.pista.trim() !== "" 
-            ? data.pista 
-            : "Sigue buscando... este secreto es muy misterioso.";
-
-        // Mostrar la pista
-        // Usamos renderMessage para que se vea claro en un modal/alerta bonito
-        this.ui.renderMessage("💡 Pista Disponible", pistaTexto);
-        
-        // Efecto visual en el input (sin abrir teclado)
-        const input = this.ui.elements.input;
-        if(input) {
-            input.classList.add("shake");
-            setTimeout(() => input.classList.remove("shake"), 500);
-        }
+        this.ui.renderMessage("❌ Intento fallido", message);
+        this.checkMoonVisibility(); // Verificar fase de la luna
     }
 
     unlockCode(key, isNewDiscovery) {
@@ -269,7 +154,7 @@ export class GameEngine {
         this.ui.clearInput();
         this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes);
         this.updateAchievementsModal(); // Actualizar modal de logros
-        this.hideMoonHint(); // Ocultar la luna al acertar
+        this.hideMoon(); // Ocultar la luna al acertar
     }
 
     toggleFavorite(code) { 
@@ -296,7 +181,7 @@ export class GameEngine {
     resetFailedAttempts() { 
         this.failedAttempts = 0; 
         localStorage.setItem("failedAttempts", "0"); 
-        this.hideMoonHint(); // Ocultar la luna al resetear
+        this.hideMoon(); // Ocultar la luna al resetear
     }
     
     importProgress(data) { 
