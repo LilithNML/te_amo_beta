@@ -339,7 +339,6 @@ export class GameEngine {
     }
     
     resetProgress() { if (confirm("¿Borrar todo?")) { localStorage.clear(); location.reload(); } }
-}
 
     // ===========================================
     // SISTEMA DE LUNA EVOLUTIVA
@@ -619,3 +618,4 @@ export class GameEngine {
             moonHint.classList.add('resonance-cold'); // Rojo - Lejos
         }
     }
+}
