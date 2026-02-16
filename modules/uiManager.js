@@ -721,12 +721,12 @@ export class UIManager {
             metadata: {
                 appVersion: "2.2",
                 exportedAt: new Date().toISOString(),
-                totalSecrets: exportData?.unlocked?.length || 0,
-                totalAchievements: exportData?.achievements?.length || 0
+                totalSecrets: 0,
+                totalAchievements: 0
             }
         };
         
-        // Recalcular metadata después de crear el objeto
+        // Calcular metadata después de crear el objeto
         exportData.metadata.totalSecrets = exportData.unlocked.length;
         exportData.metadata.totalAchievements = exportData.achievements.length;
         
