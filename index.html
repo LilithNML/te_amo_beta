@@ -179,13 +179,14 @@
       <div class="input-container">
         <input type="text" id="codeInput" placeholder="Escribe aquí..." autocomplete="off" />
         <button id="checkBtn" class="button" title="Verificar"><i class="fas fa-paper-plane"></i> Verificar</button>
-        <button id="hintBtn" class="button" title="Pedir una pista"><i class="fas fa-lightbulb"></i></button>
       </div>
 
-      <!-- Icono de Luna para pistas inteligentes (oculto por defecto) -->
-      <div id="moonHint" class="moon-hint" hidden>
-        <div class="moon-pulse"></div>
-        <i class="fas fa-moon"></i>
+      <!-- Sistema de Luna Evolutiva (Fases Lunares) -->
+      <div id="moonHint" class="moon-hint" hidden data-phase="0">
+        <div class="moon-aura"></div>
+        <div class="moon-glow-ring"></div>
+        <div class="moon-icon">🌙</div>
+        <div class="moon-press-progress"></div>
       </div>
 
       <div id="contenido" class="contenido-container fade-in" hidden></div>
