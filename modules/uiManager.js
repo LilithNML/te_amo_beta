@@ -1,6 +1,6 @@
 /**
  * modules/uiManager.js
- * Versión Final Producción:Streaming Seguro + Glassmorphism
+ * Versión Final Producción: Streaming Seguro + Glassmorphism (Sin Easter Eggs)
  */
 
 import { normalizeText } from './utils.js';
@@ -986,27 +986,36 @@ export class UIManager {
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
         const lastOracleDate = localStorage.getItem("lastOracleDate");
         
+        // Seleccionar frase aleatoria o recuperar la del día
+        let phrase = "";
+        let isNewPhrase = false;
+        
         if (lastOracleDate === today) {
-            // Ya usó el oráculo hoy
-            this.elements.oraclePhrase.textContent = "La luna te ha compartido su sabiduría por hoy. Vuelve mañana para recibir más amor.";
-            this.elements.oracleModal.classList.add("show");
-            document.body.style.overflow = "hidden";
-            return;
+            // Ya usó el oráculo hoy - recuperar la frase guardada
+            phrase = localStorage.getItem("todaysOraclePhrase") || this.oraclePhrases[0];
+        } else {
+            // Primera vez del día - nueva frase
+            if (this.oraclePhrases.length > 0) {
+                const randomIndex = Math.floor(Math.random() * this.oraclePhrases.length);
+                phrase = this.oraclePhrases[randomIndex];
+                
+                // Guardar fecha y frase del día
+                localStorage.setItem("lastOracleDate", today);
+                localStorage.setItem("todaysOraclePhrase", phrase);
+                isNewPhrase = true;
+                
+                // Confetti especial solo para frase nueva
+                this.triggerConfetti();
+            }
         }
         
-        // Seleccionar frase aleatoria
-        if (this.oraclePhrases.length > 0) {
-            const randomIndex = Math.floor(Math.random() * this.oraclePhrases.length);
-            const phrase = this.oraclePhrases[randomIndex];
-            
-            this.elements.oraclePhrase.textContent = phrase;
-            
-            // Guardar fecha de uso
-            localStorage.setItem("lastOracleDate", today);
-            
-            // Confetti especial
-            this.triggerConfetti();
-        }
+        // Mostrar frase con mensaje adicional
+        this.elements.oraclePhrase.innerHTML = `
+            <span class="oracle-phrase-text">${phrase}</span>
+            <span class="oracle-return-message">
+                ${isNewPhrase ? '✨ Esta es tu frase de hoy' : '🌙 Vuelve mañana para un nuevo mensaje'}
+            </span>
+        `;
         
         this.elements.oracleModal.classList.add("show");
         document.body.style.overflow = "hidden";
