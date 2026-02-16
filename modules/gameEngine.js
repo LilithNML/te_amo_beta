@@ -174,42 +174,94 @@ export class GameEngine {
     }
     
     importProgress(data) { 
+        // Validación estricta del formato
+        if (!data || typeof data !== 'object') {
+            this.ui.showToast("❌ Error: Archivo inválido"); 
+            return; 
+        }
+        
         if (!data.unlocked || !Array.isArray(data.unlocked)) { 
-            this.ui.showToast("Error: Archivo incompatible"); return; 
-        } 
-        
-        // Importar códigos, favoritos y logros
-        this.unlocked = new Set(data.unlocked); 
-        this.favorites = new Set(data.favorites || []); 
-        this.achievedLogros = new Set(data.achievements || []); 
-        
-        // Guardar datos básicos en localStorage
-        localStorage.setItem("desbloqueados", JSON.stringify([...this.unlocked]));
-        localStorage.setItem("favoritos", JSON.stringify([...this.favorites]));
-        localStorage.setItem("logrosAlcanzados", JSON.stringify([...this.achievedLogros]));
-        
-        // Importar métricas si existen (Backup 2.0)
-        if (data.metrics) {
-            localStorage.setItem("totalTime", data.metrics.totalTime?.toString() || "0");
-            localStorage.setItem("currentStreak", data.metrics.currentStreak?.toString() || "0");
-            localStorage.setItem("longestStreak", data.metrics.longestStreak?.toString() || "0");
-            if (data.metrics.firstVisit) localStorage.setItem("firstVisit", data.metrics.firstVisit);
-            if (data.metrics.lastVisit) localStorage.setItem("lastVisit", data.metrics.lastVisit);
+            this.ui.showToast("❌ Error: Archivo incompatible con esta aplicación"); 
+            return; 
         }
         
-        // Importar fecha del oráculo si existe (prevenir trampa)
-        if (data.oracle && data.oracle.lastOracleDate) {
-            localStorage.setItem("lastOracleDate", data.oracle.lastOracleDate);
-        }
+        // Efecto visual de reinicio (fade out/in)
+        document.body.style.opacity = '0';
+        document.body.style.transition = 'opacity 0.3s ease';
         
-        this.saveProgress(); 
-        this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes);
-        this.updateAchievementsModal(); // Actualizar modal de logros
-        
-        // Recargar estadísticas en UI
-        this.ui.statsData = this.ui.loadStatsData();
-        
-        this.ui.showToast("✨ ¡Progreso completo restaurado!"); 
+        setTimeout(() => {
+            // Importar códigos, favoritos y logros
+            this.unlocked = new Set(data.unlocked); 
+            this.favorites = new Set(data.favorites || []); 
+            this.achievedLogros = new Set(data.achievements || []); 
+            
+            // Guardar datos básicos en localStorage
+            localStorage.setItem("desbloqueados", JSON.stringify([...this.unlocked]));
+            localStorage.setItem("favoritos", JSON.stringify([...this.favorites]));
+            localStorage.setItem("logrosAlcanzados", JSON.stringify([...this.achievedLogros]));
+            
+            // Importar stats si existen (Backup 2.0)
+            if (data.stats) {
+                localStorage.setItem("totalTime", (data.stats.totalTime || 0).toString());
+                localStorage.setItem("currentStreak", (data.stats.currentStreak || 0).toString());
+                localStorage.setItem("longestStreak", (data.stats.longestStreak || 0).toString());
+                if (data.stats.firstVisit) localStorage.setItem("firstVisit", data.stats.firstVisit);
+                if (data.stats.lastVisit) localStorage.setItem("lastVisit", data.stats.lastVisit);
+                if (data.stats.failedAttempts !== undefined) {
+                    this.failedAttempts = data.stats.failedAttempts;
+                    localStorage.setItem("failedAttempts", data.stats.failedAttempts.toString());
+                }
+            }
+            
+            // Importar oráculo si existe
+            if (data.oracle) {
+                if (data.oracle.lastOracleDate) {
+                    localStorage.setItem("lastOracleDate", data.oracle.lastOracleDate);
+                }
+                if (data.oracle.todaysPhrase) {
+                    localStorage.setItem("todaysOraclePhrase", data.oracle.todaysPhrase);
+                }
+            }
+            
+            // Importar settings si existen
+            if (data.settings) {
+                if (data.settings.theme) {
+                    localStorage.setItem("theme", data.settings.theme);
+                    // Aplicar tema
+                    if (data.settings.theme === "dark") {
+                        document.body.classList.add("dark-mode");
+                    } else {
+                        document.body.classList.remove("dark-mode");
+                    }
+                }
+            }
+            
+            this.saveProgress(); 
+            this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes);
+            this.updateAchievementsModal();
+            
+            // Recargar estadísticas en UI
+            this.ui.statsData = this.ui.loadStatsData();
+            
+            // Fade in
+            document.body.style.opacity = '1';
+            
+            setTimeout(() => {
+                // Mensaje detallado de confirmación
+                const secretsCount = this.unlocked.size;
+                const achievementsCount = this.achievedLogros.size;
+                const favoritesCount = this.favorites.size;
+                
+                this.ui.renderMessage(
+                    "✨ ¡Recuerdos Restaurados!", 
+                    `<strong>Progreso recuperado con éxito:</strong><br><br>
+                    🔓 ${secretsCount} secretos descubiertos<br>
+                    🏆 ${achievementsCount} logros alcanzados<br>
+                    ❤️ ${favoritesCount} favoritos guardados<br><br>
+                    ¡Bienvenida de vuelta! 💜`
+                );
+            }, 400);
+        }, 300);
     }
     
     resetProgress() { if (confirm("¿Borrar todo?")) { localStorage.clear(); location.reload(); } }
@@ -221,9 +273,69 @@ export class GameEngine {
 
     // Obtener el código bloqueado más cercano a lo que escribió
     getClosestLockedCode(currentInput) {
-        const allCodes = Object.keys(this.mensajes);
-        const lockedCodes = allCodes.filter(code => !this.unlocked.has(code));
+        const lockedCodes = Object.keys(this.mensajes).filter(code => !this.unlocked.has(code));
+        return this.getClosestLockedCodeFromList(currentInput, lockedCodes);
+    }
+
+    // Manejar solicitud de pista (click en bombilla)
+    handleHintRequest() {
+        const input = this.ui.elements.input;
+        const currentInput = normalizeText(input.value.trim());
         
+        // Obtener solo códigos bloqueados
+        const lockedCodes = Object.keys(this.mensajes).filter(code => !this.unlocked.has(code));
+        
+        if (lockedCodes.length === 0) {
+            this.ui.showToast("🎉 ¡Increíble! Has descubierto todos los secretos.");
+            this.ui.triggerConfetti();
+            return;
+        }
+
+        let targetCode;
+        
+        // Modo Explorador: Si no hay texto, sugerir un código aleatorio bloqueado
+        if (!currentInput) {
+            targetCode = lockedCodes[Math.floor(Math.random() * lockedCodes.length)];
+            const pistaOriginal = this.mensajes[targetCode].pista || "Un secreto especial te espera...";
+            this.ui.renderMessage("🌟 Señal del Universo", `Aquí tienes una señal para un nuevo secreto:<br><br>${pistaOriginal}`);
+            return;
+        }
+        
+        // Modo Ayuda: Buscar el más cercano entre los bloqueados
+        targetCode = this.getClosestLockedCodeFromList(currentInput, lockedCodes);
+        
+        if (!targetCode) {
+            this.ui.showToast("¡Escribe algo para buscar pistas!");
+            return;
+        }
+
+        const dataSecreta = this.mensajes[targetCode];
+        const pistaOriginal = dataSecreta && dataSecreta.pista 
+            ? dataSecreta.pista 
+            : "Es un secreto muy especial...";
+
+        // Nivel 1 (0-2 fallos): Pista original
+        if (this.failedAttempts < 3) {
+            this.ui.renderMessage("💡 Pista", pistaOriginal);
+        } 
+        // Nivel 2 (3-4 fallos): Pista + estructura
+        else if (this.failedAttempts < 5) {
+            const info = `${pistaOriginal}<br><br><strong>Estructura:</strong> Son ${targetCode.length} caracteres y empieza por '${targetCode[0].toUpperCase()}'`;
+            this.ui.renderMessage("💡 Pista Mejorada", info);
+        } 
+        // Nivel 3 (5+ fallos): Activar modo resonancia automáticamente
+        else {
+            this.ui.showToast("🔥 ¡Modo Radar activado! Mira el color del cuadro mientras escribes...");
+            this.activateResonanceMode();
+            
+            setTimeout(() => {
+                this.ui.renderMessage("💡 Pista Completa", `${pistaOriginal}<br><br><strong>Estructura:</strong> ${targetCode.length} caracteres, comienza por '${targetCode[0].toUpperCase()}' y termina en '${targetCode[targetCode.length - 1].toUpperCase()}'`);
+            }, 500);
+        }
+    }
+
+    // Obtener el código bloqueado más cercano de una lista específica
+    getClosestLockedCodeFromList(currentInput, lockedCodes) {
         if (lockedCodes.length === 0) return null;
         
         let closest = lockedCodes[0];
@@ -239,51 +351,6 @@ export class GameEngine {
         }
         
         return closest;
-    }
-
-    // Manejar solicitud de pista (click en bombilla)
-    handleHintRequest() {
-        const input = this.ui.elements.input;
-        const currentInput = normalizeText(input.value);
-        
-        // Si no ha escrito nada, dar pista general
-        if (!currentInput) {
-            this.ui.showToast("¡Escribe algo para que pueda darte una pista más clara! ✨");
-            return;
-        }
-
-        // Buscar el código más parecido
-        const closestCode = this.getClosestLockedCode(currentInput);
-        
-        if (!closestCode) {
-            this.ui.showToast("🎉 ¡Ya has descubierto todos los secretos!");
-            this.ui.triggerConfetti();
-            return;
-        }
-
-        const dataSecreta = this.mensajes[closestCode];
-        const pistaOriginal = dataSecreta && dataSecreta.pista 
-            ? dataSecreta.pista 
-            : "Es un secreto muy especial...";
-
-        // Nivel 1 (0-2 fallos): Pista original
-        if (this.failedAttempts < 3) {
-            this.ui.renderMessage("💡 Pista", pistaOriginal);
-        } 
-        // Nivel 2 (3-4 fallos): Pista + estructura
-        else if (this.failedAttempts < 5) {
-            const info = `${pistaOriginal}<br><br><strong>Estructura:</strong> Son ${closestCode.length} caracteres y empieza por '${closestCode[0].toUpperCase()}'`;
-            this.ui.renderMessage("💡 Pista Mejorada", info);
-        } 
-        // Nivel 3 (5+ fallos): Activar modo resonancia
-        else {
-            this.ui.showToast("🔥 ¡Modo Radar activado! Mira el color del cuadro mientras escribes...");
-            this.activateResonanceMode();
-            
-            setTimeout(() => {
-                this.ui.renderMessage("💡 Pista Completa", `${pistaOriginal}<br><br><strong>Estructura:</strong> ${closestCode.length} caracteres, comienza por '${closestCode[0].toUpperCase()}' y termina en '${closestCode[closestCode.length - 1].toUpperCase()}'`);
-            }, 500);
-        }
     }
 
     // Activar modo resonancia
@@ -316,14 +383,19 @@ export class GameEngine {
         if (!input) return;
         
         const currentInput = normalizeText(input.value.trim());
+        
+        // Si está vacío, limpiar clases de resonancia
         if (!currentInput) {
             input.classList.remove('resonance-cold', 'resonance-warm', 'resonance-hot');
             return;
         }
 
-        // Calcular distancia al código más cercano
+        // Calcular distancia al código más cercano (solo bloqueados)
         const closestCode = this.getClosestLockedCode(currentInput);
-        if (!closestCode) return;
+        if (!closestCode) {
+            input.classList.remove('resonance-cold', 'resonance-warm', 'resonance-hot');
+            return;
+        }
 
         const dist = levenshtein(currentInput, normalizeText(closestCode));
         
