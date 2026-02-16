@@ -136,7 +136,7 @@ export class BackgroundEngine {
         // @ts-ignore
         await tsParticles.load('tsparticles', {
             fpsLimit: 60,
-            fullScreen: { enable: false, zIndex: -5 },
+            fullScreen: { enable: false, zIndex: 0 }, // Cambiado a 0 para que sea visible pero detrás del contenido
             particles: config.particles,
             interactivity: config.interactivity,
             detectRetina: true,
