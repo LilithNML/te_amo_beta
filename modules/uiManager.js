@@ -1,6 +1,6 @@
 /**
  * modules/uiManager.js
- * Versión Final Producción: Streaming Seguro + Glassmorphism
+ * Versión Final Producción: Streaming Seguro + Glassmorphism (Sin Easter Eggs)
  */
 
 import { normalizeText } from './utils.js';
@@ -698,31 +698,43 @@ export class UIManager {
     }
     
     exportProgress(){
+        // Backup 2.0 - Exportación integral de todo el estado
         const exportData = {
             unlocked: JSON.parse(localStorage.getItem("desbloqueados")||"[]"),
             favorites: JSON.parse(localStorage.getItem("favoritos")||"[]"),
             achievements: JSON.parse(localStorage.getItem("logrosAlcanzados")||"[]"),
-            metrics: {
+            stats: {
                 totalTime: parseInt(localStorage.getItem("totalTime") || "0"),
                 currentStreak: parseInt(localStorage.getItem("currentStreak") || "0"),
                 longestStreak: parseInt(localStorage.getItem("longestStreak") || "0"),
                 firstVisit: localStorage.getItem("firstVisit") || null,
-                lastVisit: localStorage.getItem("lastVisit") || null
+                lastVisit: localStorage.getItem("lastVisit") || null,
+                failedAttempts: parseInt(localStorage.getItem("failedAttempts") || "0")
             },
             oracle: {
-                lastOracleDate: localStorage.getItem("lastOracleDate") || null
+                lastOracleDate: localStorage.getItem("lastOracleDate") || null,
+                todaysPhrase: localStorage.getItem("todaysOraclePhrase") || null
+            },
+            settings: {
+                theme: localStorage.getItem("theme") || "light"
             },
             metadata: {
-                appVersion: "2.0",
-                exportedAt: new Date().toISOString()
+                appVersion: "2.2",
+                exportedAt: new Date().toISOString(),
+                totalSecrets: exportData?.unlocked?.length || 0,
+                totalAchievements: exportData?.achievements?.length || 0
             }
         };
+        
+        // Recalcular metadata después de crear el objeto
+        exportData.metadata.totalSecrets = exportData.unlocked.length;
+        exportData.metadata.totalAchievements = exportData.achievements.length;
         
         const b=new Blob([JSON.stringify(exportData,null,2)],{type:"application/json"});
         const u=URL.createObjectURL(b);
         const a=document.createElement("a");
         a.href=u;
-        a.download=`progreso_completo_${new Date().toISOString().slice(0,10)}.json`;
+        a.download=`backup_completo_${new Date().toISOString().slice(0,10)}.json`;
         a.click();
         URL.revokeObjectURL(u);
         this.showToast("✨ Backup completo exportado");
