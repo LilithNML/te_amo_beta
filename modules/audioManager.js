@@ -1,99 +1,388 @@
 /**
  * modules/audioManager.js
+ * Versión 2.0 - Sistema de Audio Completo
+ * - Playlist con covers
+ * - Efectos de sonido con Web Audio API
+ * - Sistema de interrupciones inteligentes
+ * - Autoplay después de primer click
  */
+
 export class AudioManager {
     constructor(uiManager) {
         this.ui = uiManager;
-        this.bgMusic = document.getElementById("bgMusic");
-        this.correctSound = document.getElementById("correctSound");
-        this.incorrectSound = document.getElementById("incorrectSound");
         
-        // Define aquí tus 10 canciones
+        // HTML Audio Element para música de fondo
+        this.bgMusic = document.getElementById("bgMusic");
+        
+        // Web Audio API Context para efectos de sonido
+        this.audioContext = null;
+        this.masterGain = null;
+        
+        // Playlist con metadata completa
         this.playlist = [
-             "assets/audio/playlist/Olivia Newton-John - Hopelessly Devoted to You.mp3",
-             "assets/audio/playlist/Morten Harket - Cant Take My Eyes off You.mp3",
-             "assets/audio/playlist/Frank Sinatra - The World We Knew (Over and Over).mp3",
-             "assets/audio/playlist/Frank Sinatra - Strangers In The Night.mp3",
-             "assets/audio/playlist/Frank Sinatra - My Way Of Life.mp3"
+            {
+                src: "assets/audio/playlist/Olivia Newton-John - Hopelessly Devoted to You.mp3",
+                cover: "assets/images/music-cover/hopelessly-devoted.jpg",
+                title: "Hopelessly Devoted to You",
+                artist: "Olivia Newton-John"
+            },
+            {
+                src: "assets/audio/playlist/Morten Harket - Cant Take My Eyes off You.mp3",
+                cover: "assets/images/music-cover/cant-take-my-eyes.jpg",
+                title: "Can't Take My Eyes Off You",
+                artist: "Morten Harket"
+            },
+            {
+                src: "assets/audio/playlist/Frank Sinatra - The World We Knew (Over and Over).mp3",
+                cover: "assets/images/music-cover/the-world-we-knew.jpg",
+                title: "The World We Knew",
+                artist: "Frank Sinatra"
+            },
+            {
+                src: "assets/audio/playlist/Frank Sinatra - Strangers In The Night.mp3",
+                cover: "assets/images/music-cover/strangers-in-the-night.jpg",
+                title: "Strangers In The Night",
+                artist: "Frank Sinatra"
+            },
+            {
+                src: "assets/audio/playlist/Frank Sinatra - My Way Of Life.mp3",
+                cover: "assets/images/music-cover/my-way-of-life.jpg",
+                title: "My Way Of Life",
+                artist: "Frank Sinatra"
+            }
         ];
         
+        // Estado del reproductor
         this.currentTrackIndex = parseInt(localStorage.getItem("currentTrack") || "0");
-        this.isShuffling = false;
+        this.isShuffling = localStorage.getItem("audioShuffle") === "true";
+        this.isMuted = localStorage.getItem("audioMuted") === "true";
+        this.volume = parseFloat(localStorage.getItem("audioVolume") || "0.3");
+        this.isPlaying = false;
+        this.isReady = false; // Flag para autoplay
         
-        this.setupPanelControls();
+        // Estado de interrupciones
+        this.isBackgroundPaused = false;
+        this.volumeBeforePause = this.volume;
         
-        if(this.bgMusic) {
-            this.bgMusic.volume = 0.3;
+        this.init();
+    }
+
+    init() {
+        // Configurar audio element
+        if (this.bgMusic) {
+            this.bgMusic.volume = this.volume;
+            this.bgMusic.muted = this.isMuted;
+            this.bgMusic.loop = false; // Manejaremos el loop manualmente
             this.bgMusic.addEventListener("ended", () => this.nextTrack());
         }
+        
+        // Configurar autoplay con primer click del usuario
+        this.setupAutoplayTrigger();
     }
 
-    setupPanelControls() {
-        const prev = document.getElementById("audioPrev");
-        const next = document.getElementById("audioNext");
-        const pp = document.getElementById("audioPlayPause");
-        const vol = document.getElementById("volumeSlider");
-        const mute = document.getElementById("audioMute");
-        const shuffle = document.getElementById("audioShuffle");
+    /**
+     * Configurar trigger de autoplay (primer click del usuario)
+     */
+    setupAutoplayTrigger() {
+        const startAudio = () => {
+            if (!this.isReady) {
+                this.isReady = true;
+                this.initAudioContext(); // Inicializar Web Audio API
+                this.startPlaylist(); // Comenzar reproducción
+            }
+        };
 
-        if(prev) prev.onclick = () => this.prevTrack();
-        if(next) next.onclick = () => this.nextTrack();
-        if(pp) pp.onclick = () => this.toggleMusic();
-        
-        if(vol) vol.addEventListener("input", (e) => { if(this.bgMusic) this.bgMusic.volume = e.target.value; });
-        
-        if(mute) mute.onclick = () => {
-            if(!this.bgMusic) return;
-            this.bgMusic.muted = !this.bgMusic.muted;
-            mute.innerHTML = this.bgMusic.muted ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-volume-mute"></i>';
-            mute.classList.toggle("active");
-        };
-        
-        if(shuffle) shuffle.onclick = () => {
-            this.isShuffling = !this.isShuffling;
-            shuffle.classList.toggle("active");
-            this.ui.showToast(this.isShuffling ? "Aleatorio Activado" : "Aleatorio Desactivado");
-        };
+        // Listener con { once: true } para que solo se ejecute una vez
+        document.body.addEventListener("click", startAudio, { once: true });
+        document.body.addEventListener("touchstart", startAudio, { once: true });
     }
 
+    /**
+     * Inicializar Web Audio API Context
+     */
+    initAudioContext() {
+        if (this.audioContext) return;
+        
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.masterGain = this.audioContext.createGain();
+            this.masterGain.connect(this.audioContext.destination);
+            this.masterGain.gain.value = 1.0;
+        } catch (error) {
+            console.warn("Web Audio API no disponible:", error);
+        }
+    }
+
+    /**
+     * Iniciar playlist automáticamente
+     */
+    startPlaylist() {
+        if (!this.bgMusic || this.isPlaying) return;
+        
+        this._loadAndPlay();
+    }
+
+    /**
+     * Toggle Play/Pause
+     */
     toggleMusic() {
         if (!this.bgMusic) return;
+        
         if (this.bgMusic.paused) {
-            this.bgMusic.play().catch(e => console.warn("Autoplay bloqueado hasta interacción"));
+            this.bgMusic.play().catch(e => console.warn("Autoplay bloqueado:", e));
+            this.isPlaying = true;
         } else {
             this.bgMusic.pause();
+            this.isPlaying = false;
         }
-        this.updateUIState();
+        
+        this.updateUI();
     }
 
+    /**
+     * Siguiente canción
+     */
     nextTrack() {
         if (this.isShuffling) {
+            // Shuffle: canción aleatoria
             this.currentTrackIndex = Math.floor(Math.random() * this.playlist.length);
         } else {
+            // Normal: siguiente en orden (loop)
             this.currentTrackIndex = (this.currentTrackIndex + 1) % this.playlist.length;
         }
         this._loadAndPlay();
     }
 
+    /**
+     * Canción anterior
+     */
     prevTrack() {
         this.currentTrackIndex = (this.currentTrackIndex - 1 + this.playlist.length) % this.playlist.length;
         this._loadAndPlay();
     }
 
-    _loadAndPlay() {
-        if (!this.bgMusic) return;
-        this.bgMusic.src = this.playlist[this.currentTrackIndex];
-        localStorage.setItem("currentTrack", this.currentTrackIndex);
-        this.bgMusic.play().catch(() => {});
-        this.updateUIState();
+    /**
+     * Saltar a una canción específica
+     */
+    playTrack(index) {
+        if (index >= 0 && index < this.playlist.length) {
+            this.currentTrackIndex = index;
+            this._loadAndPlay();
+        }
     }
 
-    updateUIState() {
-        const src = this.playlist[this.currentTrackIndex];
-        const name = src ? src.substring(src.lastIndexOf('/')+1) : "Pista";
-        this.ui.updateAudioUI(!this.bgMusic.paused, name);
+    /**
+     * Cargar y reproducir canción actual
+     */
+    _loadAndPlay() {
+        if (!this.bgMusic) return;
+        
+        const track = this.playlist[this.currentTrackIndex];
+        this.bgMusic.src = track.src;
+        localStorage.setItem("currentTrack", this.currentTrackIndex.toString());
+        
+        this.bgMusic.play()
+            .then(() => {
+                this.isPlaying = true;
+                this.updateUI();
+            })
+            .catch(e => console.warn("Play error:", e));
     }
-    
-    playCorrect() { if(this.correctSound) { this.correctSound.currentTime=0; this.correctSound.play().catch(()=>{}); } }
-    playIncorrect() { if(this.incorrectSound) { this.incorrectSound.currentTime=0; this.incorrectSound.play().catch(()=>{}); } }
+
+    /**
+     * Toggle Shuffle
+     */
+    toggleShuffle() {
+        this.isShuffling = !this.isShuffling;
+        localStorage.setItem("audioShuffle", this.isShuffling.toString());
+        this.ui.showToast(this.isShuffling ? "🔀 Aleatorio Activado" : "▶️ Orden Normal");
+        this.updateUI();
+    }
+
+    /**
+     * Toggle Mute
+     */
+    toggleMute() {
+        if (!this.bgMusic) return;
+        
+        this.isMuted = !this.isMuted;
+        this.bgMusic.muted = this.isMuted;
+        localStorage.setItem("audioMuted", this.isMuted.toString());
+        this.ui.showToast(this.isMuted ? "🔇 Silenciado" : "🔊 Audio Activado");
+        this.updateUI();
+    }
+
+    /**
+     * Ajustar volumen
+     */
+    setVolume(value) {
+        if (!this.bgMusic) return;
+        
+        this.volume = Math.max(0, Math.min(1, value));
+        this.bgMusic.volume = this.volume;
+        localStorage.setItem("audioVolume", this.volume.toString());
+        this.updateUI();
+    }
+
+    /**
+     * Pausar música de fondo (para interrupciones de multimedia)
+     */
+    pauseBackground() {
+        if (!this.bgMusic || this.isBackgroundPaused) return;
+        
+        this.isBackgroundPaused = true;
+        this.volumeBeforePause = this.bgMusic.volume;
+        
+        // Fade out suave
+        this._fadeVolume(this.bgMusic.volume, 0, 500, () => {
+            this.bgMusic.pause();
+        });
+    }
+
+    /**
+     * Reanudar música de fondo (después de interrupciones)
+     */
+    resumeBackground() {
+        if (!this.bgMusic || !this.isBackgroundPaused) return;
+        
+        this.isBackgroundPaused = false;
+        
+        // Reanudar con fade in
+        this.bgMusic.volume = 0;
+        this.bgMusic.play()
+            .then(() => {
+                this._fadeVolume(0, this.volumeBeforePause, 1500);
+            })
+            .catch(e => console.warn("Resume error:", e));
+    }
+
+    /**
+     * Fade de volumen suave
+     */
+    _fadeVolume(fromVolume, toVolume, duration, callback) {
+        if (!this.bgMusic) return;
+        
+        const steps = 20;
+        const stepDuration = duration / steps;
+        const volumeStep = (toVolume - fromVolume) / steps;
+        let currentStep = 0;
+        
+        const fadeInterval = setInterval(() => {
+            currentStep++;
+            const newVolume = fromVolume + (volumeStep * currentStep);
+            this.bgMusic.volume = Math.max(0, Math.min(1, newVolume));
+            
+            if (currentStep >= steps) {
+                clearInterval(fadeInterval);
+                this.bgMusic.volume = toVolume;
+                if (callback) callback();
+            }
+        }, stepDuration);
+    }
+
+    /**
+     * Obtener información de la canción actual
+     */
+    getCurrentTrack() {
+        return this.playlist[this.currentTrackIndex];
+    }
+
+    /**
+     * Actualizar UI del reproductor
+     */
+    updateUI() {
+        if (this.ui.updateAudioModal) {
+            this.ui.updateAudioModal({
+                isPlaying: this.isPlaying,
+                isMuted: this.isMuted,
+                isShuffling: this.isShuffling,
+                volume: this.volume,
+                currentTrackIndex: this.currentTrackIndex,
+                playlist: this.playlist
+            });
+        }
+    }
+
+    // ===========================================
+    // EFECTOS DE SONIDO (Web Audio API)
+    // ===========================================
+
+    /**
+     * Reproducir sonido de éxito (correcto)
+     */
+    playCorrect() {
+        if (!this.audioContext) {
+            this.initAudioContext();
+        }
+        
+        if (!this.audioContext) return;
+
+        const now = this.audioContext.currentTime;
+        
+        // Acorde mayor ascendente: Do (261.63 Hz) -> Mi (329.63 Hz) -> Sol (392 Hz)
+        const frequencies = [261.63, 329.63, 392.00];
+        const noteDuration = 0.13; // Duración de cada nota
+        
+        frequencies.forEach((freq, index) => {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.value = freq;
+            
+            // Envelope: Attack rápido, Decay suave
+            gainNode.gain.setValueAtTime(0, now + (index * noteDuration));
+            gainNode.gain.linearRampToValueAtTime(0.3, now + (index * noteDuration) + 0.02); // Attack
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + (index * noteDuration) + noteDuration); // Decay
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.masterGain);
+            
+            oscillator.start(now + (index * noteDuration));
+            oscillator.stop(now + (index * noteDuration) + noteDuration);
+        });
+    }
+
+    /**
+     * Reproducir sonido de error (incorrecto)
+     */
+    playIncorrect() {
+        if (!this.audioContext) {
+            this.initAudioContext();
+        }
+        
+        if (!this.audioContext) return;
+
+        const now = this.audioContext.currentTime;
+        
+        // Dos notas descendentes: La (220 Hz) -> Fa (174.61 Hz)
+        const frequencies = [220.00, 174.61];
+        const noteDuration = 0.15;
+        
+        frequencies.forEach((freq, index) => {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            const filter = this.audioContext.createBiquadFilter();
+            
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.value = freq;
+            
+            // Filtro lowpass para suavizar
+            filter.type = 'lowpass';
+            filter.frequency.value = 800;
+            filter.Q.value = 1;
+            
+            // Envelope más suave
+            gainNode.gain.setValueAtTime(0, now + (index * noteDuration));
+            gainNode.gain.linearRampToValueAtTime(0.2, now + (index * noteDuration) + 0.03);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + (index * noteDuration) + noteDuration);
+            
+            oscillator.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(this.masterGain);
+            
+            oscillator.start(now + (index * noteDuration));
+            oscillator.stop(now + (index * noteDuration) + noteDuration);
+        });
+    }
 }
