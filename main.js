@@ -1,6 +1,7 @@
 /**
  * main.js
  * Punto de entrada principal con carga de base de datos JSON.
+ * Versión 2.0 - Con Audio Manager integrado
  */
 import { UIManager } from './modules/uiManager.js';
 import { AudioManager } from './modules/audioManager.js';
@@ -26,8 +27,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         
         // 5. Inicializar Audio
         const audio = new AudioManager(ui);
+        
+        // Exponer audioManager globalmente para acceso desde uiManager y gameEngine
+        window.audioManager = audio;
 
-        // 6. Inicializar Motor del Juego con los mensajes y logros cargados
+        // 6. Conectar controles del modal de audio
+        setupAudioControls(audio);
+
+        // 7. Inicializar Motor del Juego con los mensajes y logros cargados
         const game = new GameEngine(ui, audio, data.mensajes, data.logros);
 
     } catch (error) {
@@ -35,3 +42,51 @@ document.addEventListener("DOMContentLoaded", async () => {
         alert("Hubo un problema al cargar los datos. Por favor, recarga la página.");
     }
 });
+
+/**
+ * Configurar event listeners para controles del modal de audio
+ */
+function setupAudioControls(audioManager) {
+    const playPauseBtn = document.getElementById("audioPlayPause");
+    const prevBtn = document.getElementById("audioPrev");
+    const nextBtn = document.getElementById("audioNext");
+    const shuffleBtn = document.getElementById("audioShuffle");
+    const muteBtn = document.getElementById("audioMute");
+    const volumeSlider = document.getElementById("volumeSlider");
+
+    if (playPauseBtn) {
+        playPauseBtn.addEventListener("click", () => {
+            audioManager.toggleMusic();
+        });
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener("click", () => {
+            audioManager.prevTrack();
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener("click", () => {
+            audioManager.nextTrack();
+        });
+    }
+
+    if (shuffleBtn) {
+        shuffleBtn.addEventListener("click", () => {
+            audioManager.toggleShuffle();
+        });
+    }
+
+    if (muteBtn) {
+        muteBtn.addEventListener("click", () => {
+            audioManager.toggleMute();
+        });
+    }
+
+    if (volumeSlider) {
+        volumeSlider.addEventListener("input", (e) => {
+            audioManager.setVolume(parseFloat(e.target.value));
+        });
+    }
+}
