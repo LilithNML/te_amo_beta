@@ -59,6 +59,8 @@ export class AudioManager {
         this.volume = parseFloat(localStorage.getItem("audioVolume") || "0.3");
         this.isPlaying = false;
         this.isReady = false; // Flag para autoplay
+        this._isSeeking = false; // Flag para seek bar dragging
+        this._seekInterval = null; // Intervalo de actualización de seek bar
         
         // Estado de interrupciones
         this.isBackgroundPaused = false;
@@ -81,20 +83,31 @@ export class AudioManager {
     }
 
     /**
-     * Configurar trigger de autoplay (primer click del usuario)
+     * Configurar trigger de autoplay (primer toque/click del usuario).
+     * Los navegadores móviles requieren un gesto del usuario para desbloquear audio.
      */
     setupAutoplayTrigger() {
-        const startAudio = () => {
-            if (!this.isReady) {
-                this.isReady = true;
-                this.initAudioContext(); // Inicializar Web Audio API
-                this.startPlaylist(); // Comenzar reproducción
+        const startAudio = async () => {
+            if (this.isReady) return;
+            this.isReady = true;
+
+            // 1. Inicializar Web Audio API para efectos de sonido
+            this.initAudioContext();
+
+            // 2. Si el AudioContext quedó suspendido (comportamiento común en mobile),
+            //    reanudarlo explícitamente dentro del handler del gesto
+            if (this.audioContext && this.audioContext.state === "suspended") {
+                await this.audioContext.resume();
             }
+
+            // 3. Iniciar reproducción de playlist
+            this.startPlaylist();
         };
 
-        // Listener con { once: true } para que solo se ejecute una vez
-        document.body.addEventListener("click", startAudio, { once: true });
-        document.body.addEventListener("touchstart", startAudio, { once: true });
+        // "touchend" en lugar de "touchstart" para evitar colisiones con el scroll en Android.
+        // "mousedown" para desktop. { once: true } garantiza ejecución única.
+        document.addEventListener("touchend", startAudio, { once: true, passive: true });
+        document.addEventListener("mousedown", startAudio, { once: true });
     }
 
     /**
@@ -117,9 +130,78 @@ export class AudioManager {
      * Iniciar playlist automáticamente
      */
     startPlaylist() {
-        if (!this.bgMusic || this.isPlaying) return;
-        
+        if (!this.bgMusic) return;
+        // Nota: no bloqueamos con this.isPlaying para garantizar el inicio en autoplay
         this._loadAndPlay();
+    }
+
+    /**
+     * Iniciar actualización de la seek bar (llamado al abrir el modal)
+     */
+    startSeekBarUpdater() {
+        this.stopSeekBarUpdater();
+        this._seekInterval = setInterval(() => this._updateSeekBar(), 500);
+    }
+
+    /**
+     * Detener actualización de la seek bar
+     */
+    stopSeekBarUpdater() {
+        if (this._seekInterval) {
+            clearInterval(this._seekInterval);
+            this._seekInterval = null;
+        }
+    }
+
+    /**
+     * Actualizar seek bar con posición actual
+     */
+    _updateSeekBar() {
+        if (!this.bgMusic) return;
+        const seekBar  = document.getElementById("audioSeekBar");
+        const timeCur  = document.getElementById("audioTimeCurrent");
+        const timeTot  = document.getElementById("audioTimeTotal");
+
+        const current  = this.bgMusic.currentTime || 0;
+        const duration = this.bgMusic.duration   || 0;
+
+        if (seekBar && !this._isSeeking) {
+            seekBar.value = duration > 0 ? (current / duration) * 100 : 0;
+            this._updateSeekFill(seekBar);
+        }
+
+        if (timeCur) timeCur.textContent = this._formatTime(current);
+        if (timeTot) timeTot.textContent = this._formatTime(duration);
+    }
+
+    /**
+     * Actualizar el relleno del track de la seek bar (color progresado)
+     */
+    _updateSeekFill(range) {
+        const val = parseFloat(range.value);
+        const min = parseFloat(range.min) || 0;
+        const max = parseFloat(range.max) || 100;
+        const pct = ((val - min) / (max - min)) * 100;
+        range.style.setProperty("--seek-fill", `${pct}%`);
+    }
+
+    /**
+     * Saltar a posición en la seek bar
+     */
+    seekTo(percent) {
+        if (!this.bgMusic || !this.bgMusic.duration) return;
+        this.bgMusic.currentTime = (percent / 100) * this.bgMusic.duration;
+        this._updateSeekBar();
+    }
+
+    /**
+     * Formatear segundos a MM:SS
+     */
+    _formatTime(seconds) {
+        if (!seconds || isNaN(seconds)) return "0:00";
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s.toString().padStart(2, "0")}`;
     }
 
     /**
@@ -301,6 +383,8 @@ export class AudioManager {
                 playlist: this.playlist
             });
         }
+        // Actualizar seek bar inmediatamente
+        this._updateSeekBar();
     }
 
     // ===========================================
