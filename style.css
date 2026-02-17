@@ -642,7 +642,7 @@ h2, .section-title { font-family: var(--title-font); color: var(--header-color);
   border-color: var(--highlight-pink);
 }
 
-/* ── SEEK BAR (Material UI / Google Pixel style) ── */
+/* ── SEEK BAR — Onda Sinusoidal Canvas ── */
 .seek-bar-container {
   display: flex;
   align-items: center;
@@ -660,77 +660,29 @@ h2, .section-title { font-family: var(--title-font); color: var(--header-color);
   letter-spacing: 0.02em;
 }
 
-.seek-bar-track {
+.seek-canvas-wrapper {
   flex-grow: 1;
+  min-width: 0;
   position: relative;
+  /* Área táctil generosa: canvas ocupa todo el contenedor */
+  cursor: pointer;
+  /* La altura real la fija JS (_setupCanvas), esto es solo fallback */
+  height: 40px;
   display: flex;
   align-items: center;
 }
 
-.seek-bar {
-  -webkit-appearance: none;
-  appearance: none;
+.seek-canvas {
+  display: block;
   width: 100%;
-  height: 4px;
-  border-radius: 2px;
-  outline: none;
+  height: 40px;
   cursor: pointer;
-  /* Relleno dinámico via --seek-fill (actualizado por JS) */
-  background: linear-gradient(
-    to right,
-    var(--highlight-pink) 0%,
-    var(--highlight-pink) var(--seek-fill, 0%),
-    rgba(255, 255, 255, 0.18) var(--seek-fill, 0%),
-    rgba(255, 255, 255, 0.18) 100%
-  );
-  transition: height 0.15s ease;
-}
-
-/* Ampliar área táctil en mobile */
-.seek-bar::-webkit-slider-container {
-  padding: 10px 0;
-}
-
-/* Thumb — Material: pequeño círculo blanco/rosa que se expande al tocar */
-.seek-bar::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 0 0 0 rgba(255, 122, 168, 0);
-  cursor: pointer;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.seek-bar::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #ffffff;
-  border: none;
-  cursor: pointer;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-/* Estado activo: halo rosa estilo Material */
-.seek-bar:active::-webkit-slider-thumb,
-.seek-bar:focus::-webkit-slider-thumb {
-  transform: scale(1.3);
-  box-shadow: 0 0 0 8px rgba(255, 122, 168, 0.25);
-}
-
-.seek-bar:active::-moz-range-thumb,
-.seek-bar:focus::-moz-range-thumb {
-  transform: scale(1.3);
-  box-shadow: 0 0 0 8px rgba(255, 122, 168, 0.25);
-}
-
-/* Track elevado en hover/active para mayor visibilidad */
-.seek-bar:hover,
-.seek-bar:active {
-  height: 5px;
+  /* Antialiasing subpixel */
+  image-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  /* El glow de la onda activa se extiende un poco fuera,
+     overflow visible garantiza que no se recorte */
+  overflow: visible;
 }
 
 .volume-control {
