@@ -94,20 +94,11 @@
           </div>
         </div>
 
-        <!-- Seek Bar Material Style -->
+        <!-- Seek Bar — Onda Sinusoidal Canvas -->
         <div class="seek-bar-container">
           <span class="seek-time" id="audioTimeCurrent">0:00</span>
-          <div class="seek-bar-track">
-            <input
-              type="range"
-              id="audioSeekBar"
-              class="seek-bar"
-              min="0"
-              max="100"
-              value="0"
-              step="0.1"
-              style="--seek-fill: 0%"
-            >
+          <div class="seek-canvas-wrapper">
+            <canvas id="audioSeekCanvas" class="seek-canvas"></canvas>
           </div>
           <span class="seek-time" id="audioTimeTotal">0:00</span>
         </div>
