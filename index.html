@@ -40,42 +40,95 @@
     <button id="menuFavorites"><i class="fas fa-heart"></i> Favoritos</button>
     <button id="menuAchievements"><i class="fas fa-trophy"></i> Logros</button>
     <button id="menuOracle"><i class="fas fa-moon"></i> Oráculo de Hoy</button>
+    <button id="menuAudio"><i class="fas fa-music"></i> Audio</button>
     <a href="https://lilithnml.github.io/love_arcade/" target="_blank" class="menu-link-button">
       <i class="fas fa-gamepad"></i> Love Arcade
     </a>
-    <!-- <button id="menuTools"><i class="fas fa-toolbox"></i> Herramientas</button> -->
     <div class="menu-divider"></div>
     <button id="menuDarkMode"><i class="fas fa-moon"></i> Modo Oscuro</button>
-    <button id="menuExport"><i class="fas fa-file-export"></i> Exportar</button>
-    <button id="menuImport"><i class="fas fa-file-import"></i> Importar</button>
-    <input type="file" id="importInput" accept=".json" style="display:none">
+    <button id="menuBackup"><i class="fas fa-database"></i> Copia de Seguridad</button>
     <button id="menuReset" class="danger-text"><i class="fas fa-trash-alt"></i> Restablecer</button>
+    <input type="file" id="importInput" accept=".json" style="display:none">
   </nav>
 
-  <aside id="audioPanel" class="side-panel">
-    <div class="panel-header"><h3>Reproductor</h3><button id="closeAudioPanel" class="close-panel-btn"><i class="fas fa-times"></i></button></div>
-    <div class="audio-info"><p id="trackName">Selecciona música</p></div>
-    <div class="audio-controls">
-      <button id="audioPrev" class="audio-btn"><i class="fas fa-backward"></i></button>
-      <button id="audioPlayPause" class="audio-btn"><i class="fas fa-play"></i></button>
-      <button id="audioNext" class="audio-btn"><i class="fas fa-forward"></i></button>
+  <!-- SUB-MENÚ: Copia de Seguridad -->
+  <div id="backupSubmenu" class="backup-submenu" style="display: none;">
+    <div class="backup-submenu-content">
+      <h3><i class="fas fa-database"></i> Copia de Seguridad</h3>
+      <p class="backup-desc">Guarda o restaura tu progreso</p>
+      <div class="backup-options">
+        <button id="menuExport" class="backup-option-btn">
+          <i class="fas fa-file-export"></i>
+          <span>Exportar Progreso</span>
+          <small>Descarga tu archivo JSON</small>
+        </button>
+        <button id="menuImport" class="backup-option-btn">
+          <i class="fas fa-file-import"></i>
+          <span>Importar Progreso</span>
+          <small>Cargar desde archivo JSON</small>
+        </button>
+      </div>
+      <button id="closeBackupSubmenu" class="button small-button">
+        <i class="fas fa-times"></i> Cerrar
+      </button>
     </div>
-    <div class="volume-section">
-      <label for="volumeSlider"><i class="fas fa-volume-up"></i></label>
-      <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.3">
-    </div>
-    <div class="audio-options">
-      <button id="audioMute" class="audio-btn small"><i class="fas fa-volume-mute"></i></button>
-      <button id="audioShuffle" class="audio-btn small"><i class="fas fa-random"></i></button>
-    </div>
-  </aside>
+  </div>
 
-  <aside id="toolsPanel" class="side-panel">
-    <div class="panel-header"><h3>Herramientas</h3><button id="closeToolsPanel" class="close-panel-btn"><i class="fas fa-times"></i></button></div>
-    <div id="toolsListContainer" class="tools-container"></div>
-  </aside>
+  <!-- MODAL: Audio (Spotify Style) -->
+  <div id="audioModal" class="audio-modal">
+    <div class="audio-modal-content">
+      <div class="audio-modal-header">
+        <h2><i class="fas fa-music"></i> Reproductor</h2>
+        <button id="closeAudioModal" class="close-modal-btn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
 
-  <!-- NUEVO: Modal de Logros -->
+      <!-- Controles de Reproducción -->
+      <div class="audio-player-controls">
+        <div class="current-track-info" id="currentTrackInfo">
+          <img src="assets/images/music-cover/placeholder.jpg" alt="Cover" class="track-cover-mini" id="currentTrackCover">
+          <div class="track-info-text">
+            <div class="track-title" id="currentTrackTitle">Selecciona una canción</div>
+            <div class="track-artist" id="currentTrackArtist">---</div>
+          </div>
+        </div>
+
+        <div class="playback-controls">
+          <button id="audioPrev" class="control-btn" title="Anterior">
+            <i class="fas fa-backward"></i>
+          </button>
+          <button id="audioPlayPause" class="control-btn primary" title="Play/Pause">
+            <i class="fas fa-play"></i>
+          </button>
+          <button id="audioNext" class="control-btn" title="Siguiente">
+            <i class="fas fa-forward"></i>
+          </button>
+        </div>
+
+        <div class="audio-options-controls">
+          <button id="audioShuffle" class="option-btn" title="Aleatorio">
+            <i class="fas fa-random"></i>
+          </button>
+          <button id="audioMute" class="option-btn" title="Silenciar">
+            <i class="fas fa-volume-up"></i>
+          </button>
+          <div class="volume-control">
+            <i class="fas fa-volume-down"></i>
+            <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.3">
+            <i class="fas fa-volume-up"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid de Canciones -->
+      <div class="playlist-grid" id="playlistGrid">
+        <!-- Se llenará dinámicamente con JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Logros -->
   <div id="achievementsModal" class="achievements-modal">
     <div class="achievements-modal-content">
       <div class="achievements-modal-header">
@@ -143,7 +196,7 @@
     </div>
   </div>
 
-  <!-- NUEVO: Modal del Oráculo -->
+  <!-- MODAL: Oráculo -->
   <div id="oracleModal" class="oracle-modal">
     <div class="oracle-modal-content">
       <div class="oracle-moon-container">
@@ -209,8 +262,7 @@
     </main>
   </div>
 
-  <audio id="correctSound" src="assets/audio/correct.mp3" preload="auto"></audio>
-  <audio id="incorrectSound" src="assets/audio/incorrect.mp3" preload="auto"></audio>
+  <!-- NO más elementos de audio HTML (sonidos se generan con Web Audio API) -->
   <audio id="bgMusic" preload="auto"></audio>
 
   <script type="module" src="main.js"></script>
