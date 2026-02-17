@@ -94,6 +94,24 @@
           </div>
         </div>
 
+        <!-- Seek Bar Material Style -->
+        <div class="seek-bar-container">
+          <span class="seek-time" id="audioTimeCurrent">0:00</span>
+          <div class="seek-bar-track">
+            <input
+              type="range"
+              id="audioSeekBar"
+              class="seek-bar"
+              min="0"
+              max="100"
+              value="0"
+              step="0.1"
+              style="--seek-fill: 0%"
+            >
+          </div>
+          <span class="seek-time" id="audioTimeTotal">0:00</span>
+        </div>
+
         <div class="playback-controls">
           <button id="audioPrev" class="control-btn" title="Anterior">
             <i class="fas fa-backward"></i>
@@ -110,14 +128,14 @@
           <button id="audioShuffle" class="option-btn" title="Aleatorio">
             <i class="fas fa-random"></i>
           </button>
-          <button id="audioMute" class="option-btn" title="Silenciar">
-            <i class="fas fa-volume-up"></i>
-          </button>
           <div class="volume-control">
             <i class="fas fa-volume-down"></i>
             <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.3">
             <i class="fas fa-volume-up"></i>
           </div>
+          <button id="audioMute" class="option-btn" title="Silenciar">
+            <i class="fas fa-volume-up"></i>
+          </button>
         </div>
       </div>
 
