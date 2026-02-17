@@ -1,11 +1,10 @@
 /**
  * main.js
- * Punto de entrada principal con carga de base de datos JSON.
- * Versión 2.1 - Seek bar + autoplay fix
+ * Versión 2.2 — Seek bar sinusoidal canvas
  */
-import { UIManager } from './modules/uiManager.js';
-import { AudioManager } from './modules/audioManager.js';
-import { GameEngine } from './modules/gameEngine.js';
+import { UIManager }        from './modules/uiManager.js';
+import { AudioManager }     from './modules/audioManager.js';
+import { GameEngine }       from './modules/gameEngine.js';
 import { BackgroundEngine } from './modules/backgroundEngine.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -15,10 +14,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         const data = await response.json();
 
         const oracleResponse = await fetch('./oracle.json');
-        const oracleData = await oracleResponse.json();
+        const oracleData     = await oracleResponse.json();
 
         const backgroundEngine = new BackgroundEngine();
-        const ui = new UIManager(data.herramientasExternas, oracleData.phrases);
+        const ui    = new UIManager(data.herramientasExternas, oracleData.phrases);
         const audio = new AudioManager(ui);
 
         window.audioManager = audio;
@@ -34,76 +33,110 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  CONTROLES DEL MODAL
+// ─────────────────────────────────────────────────────────────────────────────
 function setupAudioControls(audioManager) {
-    const playPauseBtn = document.getElementById("audioPlayPause");
-    const prevBtn      = document.getElementById("audioPrev");
-    const nextBtn      = document.getElementById("audioNext");
-    const shuffleBtn   = document.getElementById("audioShuffle");
-    const muteBtn      = document.getElementById("audioMute");
-    const volumeSlider = document.getElementById("volumeSlider");
-    const seekBar      = document.getElementById("audioSeekBar");
+    const get = (id) => document.getElementById(id);
 
-    if (playPauseBtn) playPauseBtn.addEventListener("click", () => audioManager.toggleMusic());
-    if (prevBtn)      prevBtn.addEventListener("click",      () => audioManager.prevTrack());
-    if (nextBtn)      nextBtn.addEventListener("click",      () => audioManager.nextTrack());
-    if (shuffleBtn)   shuffleBtn.addEventListener("click",   () => audioManager.toggleShuffle());
-    if (muteBtn)      muteBtn.addEventListener("click",      () => audioManager.toggleMute());
+    const btn = (id, fn) => { const el = get(id); if (el) el.addEventListener("click", fn); };
 
-    if (volumeSlider) {
-        volumeSlider.addEventListener("input", (e) => {
-            audioManager.setVolume(parseFloat(e.target.value));
-        });
-    }
+    btn("audioPlayPause", () => audioManager.toggleMusic());
+    btn("audioPrev",      () => audioManager.prevTrack());
+    btn("audioNext",      () => audioManager.nextTrack());
+    btn("audioShuffle",   () => audioManager.toggleShuffle());
+    btn("audioMute",      () => audioManager.toggleMute());
 
-    if (seekBar) {
-        // Pausar actualizaciones automáticas mientras el usuario arrastra
-        seekBar.addEventListener("mousedown",  () => { audioManager._isSeeking = true; });
-        seekBar.addEventListener("touchstart", () => { audioManager._isSeeking = true; }, { passive: true });
+    const vol = get("volumeSlider");
+    if (vol) vol.addEventListener("input", (e) => audioManager.setVolume(parseFloat(e.target.value)));
 
-        // Actualizar relleno de color mientras arrastra
-        seekBar.addEventListener("input", (e) => {
-            audioManager._updateSeekFill(e.target);
-        });
-
-        // Al soltar: saltar a la posición seleccionada
-        seekBar.addEventListener("mouseup",  (e) => {
-            audioManager._isSeeking = false;
-            audioManager.seekTo(parseFloat(e.target.value));
-        });
-        seekBar.addEventListener("touchend", (e) => {
-            audioManager._isSeeking = false;
-            audioManager.seekTo(parseFloat(e.target.value));
-        });
-        seekBar.addEventListener("change", (e) => {
-            audioManager._isSeeking = false;
-            audioManager.seekTo(parseFloat(e.target.value));
-        });
-    }
+    // Seek bar canvas
+    setupCanvasSeek(audioManager);
 }
 
-/**
- * Arrancar el intervalo de la seek bar al abrir el modal y detenerlo al cerrarlo.
- */
+// ─────────────────────────────────────────────────────────────────────────────
+//  SEEK BAR CANVAS — interacción táctil / ratón
+// ─────────────────────────────────────────────────────────────────────────────
+function setupCanvasSeek(audioManager) {
+    const canvas = document.getElementById("audioSeekCanvas");
+    if (!canvas) return;
+
+    /** Convierte posición X del evento a ratio 0-1 */
+    const xToRatio = (clientX) => {
+        const rect = canvas.getBoundingClientRect();
+        return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    };
+
+    // ── Mouse ──────────────────────────────────────────────────────────────
+    canvas.addEventListener("mousedown", (e) => {
+        audioManager._isSeeking = true;
+        audioManager.seekPreview(xToRatio(e.clientX));
+    });
+
+    window.addEventListener("mousemove", (e) => {
+        if (!audioManager._isSeeking) return;
+        audioManager.seekPreview(xToRatio(e.clientX));
+    });
+
+    window.addEventListener("mouseup", (e) => {
+        if (!audioManager._isSeeking) return;
+        const ratio = xToRatio(e.clientX);
+        audioManager._isSeeking = false;
+        audioManager.seekTo(ratio * 100);
+    });
+
+    // ── Touch ──────────────────────────────────────────────────────────────
+    canvas.addEventListener("touchstart", (e) => {
+        audioManager._isSeeking = true;
+        audioManager.seekPreview(xToRatio(e.touches[0].clientX));
+    }, { passive: true });
+
+    canvas.addEventListener("touchmove", (e) => {
+        if (!audioManager._isSeeking) return;
+        audioManager.seekPreview(xToRatio(e.touches[0].clientX));
+    }, { passive: true });
+
+    canvas.addEventListener("touchend", (e) => {
+        if (!audioManager._isSeeking) return;
+        const ratio = xToRatio(e.changedTouches[0].clientX);
+        audioManager._isSeeking = false;
+        audioManager.seekTo(ratio * 100);
+    });
+
+    // Tap simple (click sin drag)
+    canvas.addEventListener("click", (e) => {
+        if (audioManager._isSeeking) return; // ya gestionado por mouseup
+        audioManager.seekTo(xToRatio(e.clientX) * 100);
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  CICLO DE VIDA DEL ANIMADOR (arrancar/parar con el modal)
+// ─────────────────────────────────────────────────────────────────────────────
 function setupSeekBarLifecycle(audioManager) {
     const audioModal      = document.getElementById("audioModal");
     const closeAudioModal = document.getElementById("closeAudioModal");
     const menuAudio       = document.getElementById("menuAudio");
 
+    // Abrir modal → iniciar rAF loop + reconfigurar canvas
     if (menuAudio) {
-        menuAudio.addEventListener("click", () => audioManager.startSeekBarUpdater());
+        menuAudio.addEventListener("click", () => {
+            // Pequeño delay para que el modal sea visible antes de medir el canvas
+            requestAnimationFrame(() => audioManager.startSeekBarUpdater());
+        });
     }
 
+    // Cerrar modal (botón X) → detener rAF loop
     if (closeAudioModal) {
         closeAudioModal.addEventListener("click", () => audioManager.stopSeekBarUpdater());
     }
 
-    // Detectar cierre por click fuera del modal
+    // Cerrar modal (click fuera) → MutationObserver sobre la clase "show"
     if (audioModal) {
-        const observer = new MutationObserver(() => {
+        new MutationObserver(() => {
             if (!audioModal.classList.contains("show")) {
                 audioManager.stopSeekBarUpdater();
             }
-        });
-        observer.observe(audioModal, { attributes: true, attributeFilter: ["class"] });
+        }).observe(audioModal, { attributes: true, attributeFilter: ["class"] });
     }
 }
