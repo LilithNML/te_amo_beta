@@ -126,6 +126,11 @@ export class GameEngine {
     unlockCode(key, isNewDiscovery) {
         const data = this.mensajes[key];
         
+        // Reanudar música de fondo si estaba pausada por multimedia anterior
+        if (window.audioManager && window.audioManager.isBackgroundPaused) {
+            window.audioManager.resumeBackground();
+        }
+        
         if (isNewDiscovery) {
             this.ui.showSuccess();
             this.audio.playCorrect();
