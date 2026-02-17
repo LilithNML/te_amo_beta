@@ -610,21 +610,30 @@ h2, .section-title { font-family: var(--title-font); color: var(--header-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
 }
 
 .option-btn {
+  /* Tamaño fijo que no cede en layouts flex — fix Android */
+  flex-shrink: 0;
+  flex-grow: 0;
+  min-width: 40px;
+  min-height: 40px;
+  width: 40px;
+  height: 40px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
   color: var(--text-light);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s;
+  line-height: 1;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .option-btn:hover,
@@ -633,25 +642,121 @@ h2, .section-title { font-family: var(--title-font); color: var(--header-color);
   border-color: var(--highlight-pink);
 }
 
+/* ── SEEK BAR (Material UI / Google Pixel style) ── */
+.seek-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.seek-time {
+  font-size: 0.75em;
+  color: var(--text-medium);
+  min-width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.seek-bar-track {
+  flex-grow: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.seek-bar {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  /* Relleno dinámico via --seek-fill (actualizado por JS) */
+  background: linear-gradient(
+    to right,
+    var(--highlight-pink) 0%,
+    var(--highlight-pink) var(--seek-fill, 0%),
+    rgba(255, 255, 255, 0.18) var(--seek-fill, 0%),
+    rgba(255, 255, 255, 0.18) 100%
+  );
+  transition: height 0.15s ease;
+}
+
+/* Ampliar área táctil en mobile */
+.seek-bar::-webkit-slider-container {
+  padding: 10px 0;
+}
+
+/* Thumb — Material: pequeño círculo blanco/rosa que se expande al tocar */
+.seek-bar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 0 0 rgba(255, 122, 168, 0);
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.seek-bar::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* Estado activo: halo rosa estilo Material */
+.seek-bar:active::-webkit-slider-thumb,
+.seek-bar:focus::-webkit-slider-thumb {
+  transform: scale(1.3);
+  box-shadow: 0 0 0 8px rgba(255, 122, 168, 0.25);
+}
+
+.seek-bar:active::-moz-range-thumb,
+.seek-bar:focus::-moz-range-thumb {
+  transform: scale(1.3);
+  box-shadow: 0 0 0 8px rgba(255, 122, 168, 0.25);
+}
+
+/* Track elevado en hover/active para mayor visibilidad */
+.seek-bar:hover,
+.seek-bar:active {
+  height: 5px;
+}
+
 .volume-control {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-grow: 1;
+  min-width: 0; /* evitar overflow en flex */
 }
 
 .volume-control i {
   color: var(--text-medium);
   font-size: 0.9em;
+  flex-shrink: 0;
 }
 
 .volume-control input[type="range"] {
   flex-grow: 1;
+  min-width: 0;
   height: 4px;
   border-radius: 2px;
   background: rgba(255,255,255,0.2);
   outline: none;
   -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
 }
 
 .volume-control input[type="range"]::-webkit-slider-thumb {
@@ -661,6 +766,7 @@ h2, .section-title { font-family: var(--title-font); color: var(--header-color);
   border-radius: 50%;
   background: var(--highlight-pink);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .volume-control input[type="range"]::-moz-range-thumb {
@@ -670,6 +776,7 @@ h2, .section-title { font-family: var(--title-font); color: var(--header-color);
   background: var(--highlight-pink);
   cursor: pointer;
   border: none;
+  flex-shrink: 0;
 }
 
 /* Grid de Playlist */
