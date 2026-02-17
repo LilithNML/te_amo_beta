@@ -19,27 +19,31 @@ export class UIManager {
             menuButton: document.getElementById("menuButton"),
             dropdownMenu: document.getElementById("dropdownMenu"),
             importInput: document.getElementById("importInput"),
-            audioPanel: document.getElementById("audioPanel"),
-            closeAudioPanel: document.getElementById("closeAudioPanel"),
-            toolsPanel: document.getElementById("toolsPanel"),
-            closeToolsPanel: document.getElementById("closeToolsPanel"),
-            toolsListContainer: document.getElementById("toolsListContainer"),
             unlockedSection: document.getElementById("unlockedSection"),
             unlockedList: document.getElementById("unlockedList"),
             searchUnlocked: document.getElementById("searchUnlocked"),
             categoryFilter: document.getElementById("categoryFilter"),
             filterFavBtn: document.getElementById("filterFavBtn"),
             closeUnlockedBtn: document.getElementById("closeUnlockedBtn"),
-            // Nuevos elementos para el modal de logros
+            // Modal de logros
             achievementsModal: document.getElementById("achievementsModal"),
             closeAchievementsModal: document.getElementById("closeAchievementsModal"),
             viewAchievementsBtn: document.getElementById("viewAchievementsBtn"),
             menuAchievements: document.getElementById("menuAchievements"),
-            // Nuevos elementos para el oráculo
+            // Modal del oráculo
             oracleModal: document.getElementById("oracleModal"),
             closeOracleModal: document.getElementById("closeOracleModal"),
             oraclePhrase: document.getElementById("oraclePhrase"),
             menuOracle: document.getElementById("menuOracle"),
+            // Modal de audio
+            audioModal: document.getElementById("audioModal"),
+            closeAudioModal: document.getElementById("closeAudioModal"),
+            playlistGrid: document.getElementById("playlistGrid"),
+            menuAudio: document.getElementById("menuAudio"),
+            // Submenu de backup
+            backupSubmenu: document.getElementById("backupSubmenu"),
+            closeBackupSubmenu: document.getElementById("closeBackupSubmenu"),
+            menuBackup: document.getElementById("menuBackup"),
             // Elementos para modo lectura
             readingModeModal: document.getElementById("readingModeModal"),
             exitReadingMode: document.getElementById("exitReadingMode"),
@@ -58,6 +62,8 @@ export class UIManager {
         this.setupListListeners();
         this.setupAchievementsModal(); // Configurar modal de logros
         this.setupOracleModal(); // Configurar modal del oráculo
+        this.setupAudioModal(); // Configurar modal de audio
+        this.setupBackupSubmenu(); // Configurar submenu de backup
         this.setupReadingMode(); // Configurar modo lectura
         this.initDynamicPlaceholder();
         this.updateDynamicGreeting(); // Actualizar saludo
@@ -335,11 +341,23 @@ export class UIManager {
                 }
                 break;
             case "audio":
+                // Pausar música de fondo
+                if (window.audioManager) {
+                    window.audioManager.pauseBackground();
+                }
+
                 const audio = document.createElement("audio");
                 audio.src = data.audio;
-                audio.autoplay = true; // Se reproduce al instante
-                audio.controls = false; // Sin controles
-                audio.style.display = "none"; // Oculto visualmente
+                audio.autoplay = true;
+                audio.controls = false;
+                audio.style.display = "none";
+
+                // Reanudar música cuando termine o se oculte el contenido
+                audio.addEventListener("ended", () => {
+                    if (window.audioManager) {
+                        window.audioManager.resumeBackground();
+                    }
+                });
 
                 container.appendChild(audio);
 
@@ -362,10 +380,14 @@ export class UIManager {
                 container.appendChild(img);
                 break;
             case "image_audio":
+                // Pausar música de fondo
+                if (window.audioManager) {
+                    window.audioManager.pauseBackground();
+                }
+
                 const imgMixed = document.createElement("img");
                 imgMixed.src = data.imagen; 
                 imgMixed.alt = "Momento Especial";
-                
                 
                 imgMixed.style.maxWidth = "100%";
                 imgMixed.style.borderRadius = "12px";
@@ -385,6 +407,14 @@ export class UIManager {
                 audioMixed.autoplay = true;
                 audioMixed.controls = false;
                 audioMixed.style.display = "none";
+
+                // Reanudar música cuando termine
+                audioMixed.addEventListener("ended", () => {
+                    if (window.audioManager) {
+                        window.audioManager.resumeBackground();
+                    }
+                });
+
                 container.appendChild(audioMixed);
                 
                 if (data.texto) {
@@ -396,10 +426,20 @@ export class UIManager {
                 }
                 break;
             case "video":
+                // Pausar música de fondo
+                if (window.audioManager) {
+                    window.audioManager.pauseBackground();
+                }
+
                 if (data.videoEmbed) {
-                    const w = document.createElement("div"); w.className="video-wrapper";
+                    const w = document.createElement("div"); 
+                    w.className="video-wrapper";
                     w.innerHTML = `<div class="video-loader"></div><iframe src="${data.videoEmbed}" class="video-frame" allow="autoplay; encrypted-media; fullscreen" onload="this.style.opacity=1;this.previousElementSibling.style.display='none'"></iframe>`;
                     container.appendChild(w);
+
+                    // Nota: Para iframes externos no podemos detectar el "ended"
+                    // Pero podemos reanudar cuando el usuario oculte el contenido
+                    // esto se maneja en el gameEngine cuando se cambia de secreto
                 }
                 break;
             case "internal":
@@ -646,18 +686,160 @@ export class UIManager {
         this.bindMenuAction("menuAchievements",()=>this.openAchievementsModal());
         this.bindMenuAction("menuOracle",()=>this.openOracleModal());
         this.bindMenuAction("menuDarkMode",()=>this.toggleDarkMode());
-        this.bindMenuAction("menuAudio",()=>this.openPanel(this.elements.audioPanel));
-        this.bindMenuAction("menuTools",()=>{this.renderTools();this.openPanel(this.elements.toolsPanel);});
-        this.bindMenuAction("menuExport",()=>this.exportProgress());
-        this.bindMenuAction("menuImport",()=>this.elements.importInput.click());
+        this.bindMenuAction("menuAudio",()=>this.openAudioModal());
+        this.bindMenuAction("menuBackup",()=>this.openBackupSubmenu());
         this.elements.importInput.addEventListener("change",(e)=>{if(e.target.files.length)this.handleImportFile(e.target.files[0]);this.elements.importInput.value="";});
-        if(this.elements.closeAudioPanel)this.elements.closeAudioPanel.addEventListener("click",()=>this.closePanel(this.elements.audioPanel));
-        if(this.elements.closeToolsPanel)this.elements.closeToolsPanel.addEventListener("click",()=>this.closePanel(this.elements.toolsPanel));
     }
     bindMenuAction(id,fn){const b=document.getElementById(id);if(b)b.addEventListener("click",()=>{fn();this.elements.dropdownMenu.classList.remove("show");});}
-    openPanel(p){if(p){p.classList.add("show");p.setAttribute("aria-hidden","false");}}
-    closePanel(p){if(p){p.classList.remove("show");p.setAttribute("aria-hidden","true");}}
-    renderTools(){const c=this.elements.toolsListContainer;if(!c)return;c.innerHTML="";this.herramientas.forEach(t=>{const d=document.createElement("div");d.className="tool-card";d.innerHTML=`<div class="tool-header"><i class="${t.icono}"></i> ${t.nombre}</div><div class="tool-desc">${t.descripcion}</div><a href="${t.url}" target="_blank" class="tool-btn">Abrir <i class="fas fa-external-link-alt"></i></a>`;c.appendChild(d);});}
+    
+    // --- MODAL DE AUDIO ---
+    setupAudioModal() {
+        if (this.elements.closeAudioModal) {
+            this.elements.closeAudioModal.addEventListener("click", () => this.closeAudioModal());
+        }
+        
+        if (this.elements.audioModal) {
+            this.elements.audioModal.addEventListener("click", (e) => {
+                if (e.target === this.elements.audioModal) {
+                    this.closeAudioModal();
+                }
+            });
+        }
+    }
+
+    openAudioModal() {
+        if (!this.elements.audioModal) return;
+        if (this.elements.dropdownMenu) {
+            this.elements.dropdownMenu.classList.remove("show");
+        }
+        this.renderAudioModal();
+        this.elements.audioModal.classList.add("show");
+        document.body.style.overflow = "hidden";
+    }
+
+    closeAudioModal() {
+        if (!this.elements.audioModal) return;
+        this.elements.audioModal.classList.remove("show");
+        document.body.style.overflow = "";
+    }
+
+    renderAudioModal() {
+        // Esta función será llamada por el audioManager
+        // para renderizar la playlist
+    }
+
+    updateAudioModal(state) {
+        // Actualizar UI del reproductor
+        const playPauseBtn = document.getElementById("audioPlayPause");
+        const muteBtn = document.getElementById("audioMute");
+        const shuffleBtn = document.getElementById("audioShuffle");
+        const volumeSlider = document.getElementById("volumeSlider");
+        const currentTrackTitle = document.getElementById("currentTrackTitle");
+        const currentTrackArtist = document.getElementById("currentTrackArtist");
+        const currentTrackCover = document.getElementById("currentTrackCover");
+
+        if (playPauseBtn) {
+            playPauseBtn.innerHTML = state.isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+        }
+
+        if (muteBtn) {
+            muteBtn.innerHTML = state.isMuted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+            muteBtn.classList.toggle("active", state.isMuted);
+        }
+
+        if (shuffleBtn) {
+            shuffleBtn.classList.toggle("active", state.isShuffling);
+        }
+
+        if (volumeSlider) {
+            volumeSlider.value = state.volume;
+        }
+
+        if (state.playlist && state.playlist[state.currentTrackIndex]) {
+            const track = state.playlist[state.currentTrackIndex];
+            if (currentTrackTitle) currentTrackTitle.textContent = track.title;
+            if (currentTrackArtist) currentTrackArtist.textContent = track.artist || "---";
+            if (currentTrackCover) currentTrackCover.src = track.cover;
+        }
+
+        // Renderizar grid de playlist
+        this.renderPlaylistGrid(state.playlist, state.currentTrackIndex);
+    }
+
+    renderPlaylistGrid(playlist, currentIndex) {
+        if (!this.elements.playlistGrid || !playlist) return;
+
+        this.elements.playlistGrid.innerHTML = "";
+
+        playlist.forEach((track, index) => {
+            const item = document.createElement("div");
+            item.className = "playlist-item";
+            if (index === currentIndex) item.classList.add("active");
+
+            item.innerHTML = `
+                <img src="${track.cover}" alt="${track.title}" class="playlist-item-cover" onerror="this.src='assets/images/music-cover/placeholder.jpg'">
+                <div class="playlist-item-title">${track.title}</div>
+                <div class="playlist-item-artist">${track.artist || "---"}</div>
+            `;
+
+            item.addEventListener("click", () => {
+                if (window.audioManager) {
+                    window.audioManager.playTrack(index);
+                }
+            });
+
+            this.elements.playlistGrid.appendChild(item);
+        });
+    }
+
+    // --- SUBMENU DE BACKUP ---
+    setupBackupSubmenu() {
+        if (this.elements.closeBackupSubmenu) {
+            this.elements.closeBackupSubmenu.addEventListener("click", () => this.closeBackupSubmenu());
+        }
+
+        if (this.elements.backupSubmenu) {
+            this.elements.backupSubmenu.addEventListener("click", (e) => {
+                if (e.target === this.elements.backupSubmenu) {
+                    this.closeBackupSubmenu();
+                }
+            });
+        }
+
+        // Botones de exportar e importar dentro del submenu
+        const exportBtn = document.getElementById("menuExport");
+        const importBtn = document.getElementById("menuImport");
+
+        if (exportBtn) {
+            exportBtn.addEventListener("click", () => {
+                this.exportProgress();
+                this.closeBackupSubmenu();
+            });
+        }
+
+        if (importBtn) {
+            importBtn.addEventListener("click", () => {
+                this.elements.importInput.click();
+                this.closeBackupSubmenu();
+            });
+        }
+    }
+
+    openBackupSubmenu() {
+        if (!this.elements.backupSubmenu) return;
+        if (this.elements.dropdownMenu) {
+            this.elements.dropdownMenu.classList.remove("show");
+        }
+        this.elements.backupSubmenu.style.display = "flex";
+        document.body.style.overflow = "hidden";
+    }
+
+    closeBackupSubmenu() {
+        if (!this.elements.backupSubmenu) return;
+        this.elements.backupSubmenu.style.display = "none";
+        document.body.style.overflow = "";
+    }
+    
     
     setupListListeners(){
         this.elements.searchUnlocked.addEventListener("input",()=>this.triggerListFilter());
