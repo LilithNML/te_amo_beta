@@ -206,6 +206,16 @@ export class GameEngine {
             localStorage.setItem("favoritos", JSON.stringify([...this.favorites]));
             localStorage.setItem("logrosAlcanzados", JSON.stringify([...this.achievedLogros]));
             
+            // Importar correos leídos si existen (Backup 2.3+)
+            if (data.readEmails && Array.isArray(data.readEmails)) {
+                localStorage.setItem("readEmails", JSON.stringify(data.readEmails));
+                // Actualizar en UIManager si está disponible
+                if (this.ui.readEmails) {
+                    this.ui.readEmails = new Set(data.readEmails);
+                    this.ui.checkMailboxNotifications();
+                }
+            }
+            
             // Importar stats si existen (Backup 2.0)
             if (data.stats) {
                 localStorage.setItem("totalTime", (data.stats.totalTime || 0).toString());
