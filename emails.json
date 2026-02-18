@@ -1,0 +1,50 @@
+{
+  "emails": [
+    {
+      "id": "mail_anniversary_01",
+      "sender": "El Guardián",
+      "subject": "Archivos Recuperados: 2024",
+      "date": "2025-02-14",
+      "preview": "He logrado desencriptar...",
+      "body": "Hola,\n\nHe encontrado estos archivos antiguos. La contraseña es la fecha de nuestro aniversario en formato DDMMAAAA.",
+      "attachments": [
+        {
+          "name": "foto_secreta.jpg",
+          "type": "encrypted-image",
+          "url": "assets/encrypted/secret_img.wenc",
+          "key": "14022020"
+        },
+        {
+          "name": "contrato_amor.pdf",
+          "type": "file",
+          "url": "assets/docs/contrato.pdf"
+        }
+      ]
+    },
+    {
+      "id": "mail_welcome_01",
+      "sender": "Sistema",
+      "subject": "Bienvenida al Buzón Secreto",
+      "date": "2025-02-01",
+      "preview": "Este es tu nuevo buzón privado...",
+      "body": "¡Hola mi amor!\n\nEste es tu buzón privado donde encontrarás mensajes especiales, archivos encriptados y sorpresas que he preparado para ti.\n\nCada mensaje puede contener archivos adjuntos, algunos protegidos con contraseñas que tendrás que descubrir.\n\n¡Disfruta explorando!",
+      "attachments": []
+    },
+    {
+      "id": "mail_photo_memories",
+      "sender": "Coleccionista de Momentos",
+      "subject": "Recuerdos de Verano",
+      "date": "2025-02-10",
+      "preview": "He guardado estos momentos...",
+      "body": "Estos son algunos de los momentos más especiales que hemos vivido juntos.\n\nLa contraseña es el nombre de nuestro lugar favorito (todo en minúsculas).",
+      "attachments": [
+        {
+          "name": "summer_memories.jpg",
+          "type": "encrypted-image",
+          "url": "assets/encrypted/summer_2024.wenc",
+          "key": "playa"
+        }
+      ]
+    }
+  ]
+}
