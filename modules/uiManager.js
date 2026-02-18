@@ -49,13 +49,26 @@ export class UIManager {
             exitReadingMode: document.getElementById("exitReadingMode"),
             readingModeText: document.getElementById("readingModeText"),
             // Saludo dinámico
-            dynamicGreeting: document.querySelector(".dynamic-greeting")
+            dynamicGreeting: document.querySelector(".dynamic-greeting"),
+            // Modal de buzón
+            mailboxModal: document.getElementById("mailboxModal"),
+            closeMailboxModal: document.getElementById("closeMailboxModal"),
+            menuMailbox: document.getElementById("menuMailbox"),
+            mailboxList: document.getElementById("mailboxList"),
+            mailViewer: document.getElementById("mailViewer"),
+            mailboxBadge: document.getElementById("mailboxBadge"),
+            menuBadge: document.getElementById("menuBadge")
         };
 
         this.cachedPassword = null; 
         this.showingFavoritesOnly = false;
         this.typewriterTimeout = null;
         this.statsData = this.loadStatsData(); // Cargar estadísticas
+        
+        // Estado del buzón
+        this.emailsData = null;
+        this.emailsLoaded = false;
+        this.readEmails = new Set(JSON.parse(localStorage.getItem("readEmails") || "[]"));
 
         this.initTheme();
         this.setupMenuListeners();
@@ -65,8 +78,10 @@ export class UIManager {
         this.setupAudioModal(); // Configurar modal de audio
         this.setupBackupSubmenu(); // Configurar submenu de backup
         this.setupReadingMode(); // Configurar modo lectura
+        this.setupMailboxModal(); // Configurar modal de buzón
         this.initDynamicPlaceholder();
         this.updateDynamicGreeting(); // Actualizar saludo
+        this.checkMailboxNotifications(); // Verificar notificaciones
     }
 
     // Cargar estadísticas del localStorage
@@ -885,6 +900,7 @@ export class UIManager {
             unlocked: JSON.parse(localStorage.getItem("desbloqueados")||"[]"),
             favorites: JSON.parse(localStorage.getItem("favoritos")||"[]"),
             achievements: JSON.parse(localStorage.getItem("logrosAlcanzados")||"[]"),
+            readEmails: JSON.parse(localStorage.getItem("readEmails")||"[]"),
             stats: {
                 totalTime: parseInt(localStorage.getItem("totalTime") || "0"),
                 currentStreak: parseInt(localStorage.getItem("currentStreak") || "0"),
@@ -901,7 +917,7 @@ export class UIManager {
                 theme: localStorage.getItem("theme") || "light"
             },
             metadata: {
-                appVersion: "2.2",
+                appVersion: "2.3",
                 exportedAt: new Date().toISOString(),
                 totalSecrets: 0,
                 totalAchievements: 0
@@ -1264,5 +1280,335 @@ export class UIManager {
             return btn;
         }
         return null;
+    }
+
+    // ===========================================
+    // MÓDULO DE BUZÓN (CORREO INTERNO)
+    // ===========================================
+    
+    setupMailboxModal() {
+        if (this.elements.menuMailbox) {
+            this.elements.menuMailbox.addEventListener("click", () => this.openMailboxModal());
+        }
+        
+        if (this.elements.closeMailboxModal) {
+            this.elements.closeMailboxModal.addEventListener("click", () => this.closeMailboxModal());
+        }
+        
+        if (this.elements.mailboxModal) {
+            this.elements.mailboxModal.addEventListener("click", (e) => {
+                if (e.target === this.elements.mailboxModal) {
+                    this.closeMailboxModal();
+                }
+            });
+        }
+    }
+
+    async checkMailboxNotifications() {
+        try {
+            // Verificación ligera para mostrar badge
+            const response = await fetch('./emails.json');
+            if (!response.ok) return;
+            
+            const data = await response.json();
+            const totalEmails = data.emails.length;
+            const unreadCount = totalEmails - this.readEmails.size;
+            
+            this.updateMailboxBadge(unreadCount);
+        } catch (error) {
+            console.warn("No se pudo verificar el buzón:", error);
+        }
+    }
+
+    async loadEmailsData() {
+        if (this.emailsLoaded) return this.emailsData;
+        
+        try {
+            const response = await fetch('./emails.json');
+            if (!response.ok) throw new Error("No se pudo cargar emails.json");
+            
+            this.emailsData = await response.json();
+            this.emailsLoaded = true;
+            return this.emailsData;
+        } catch (error) {
+            console.error("Error cargando emails:", error);
+            return null;
+        }
+    }
+
+    async openMailboxModal() {
+        if (!this.elements.mailboxModal) return;
+        
+        // Cerrar menú desplegable
+        if (this.elements.dropdownMenu) {
+            this.elements.dropdownMenu.classList.remove("show");
+        }
+        
+        // Cargar datos si aún no están cargados
+        if (!this.emailsLoaded) {
+            const data = await this.loadEmailsData();
+            if (!data) {
+                this.showToast("❌ Error al cargar el buzón");
+                return;
+            }
+        }
+        
+        // Mostrar modal
+        this.elements.mailboxModal.classList.add("show");
+        document.body.style.overflow = "hidden";
+        
+        // Renderizar lista de correos
+        this.renderMailboxList();
+    }
+
+    closeMailboxModal() {
+        if (!this.elements.mailboxModal) return;
+        this.elements.mailboxModal.classList.remove("show");
+        document.body.style.overflow = "";
+        
+        // Limpiar visor
+        if (this.elements.mailViewer) {
+            this.elements.mailViewer.innerHTML = "";
+            this.elements.mailViewer.classList.remove("show");
+        }
+    }
+
+    renderMailboxList() {
+        if (!this.elements.mailboxList || !this.emailsData) return;
+        
+        const emails = this.emailsData.emails || [];
+        
+        let html = "";
+        for (const email of emails) {
+            const isUnread = !this.readEmails.has(email.id);
+            const unreadClass = isUnread ? 'unread' : '';
+            
+            html += `
+                <div class="mail-item ${unreadClass}" data-mail-id="${email.id}">
+                    <div class="mail-item-header">
+                        <span class="mail-sender">${email.sender}</span>
+                        <span class="mail-date">${this.formatDate(email.date)}</span>
+                    </div>
+                    <div class="mail-subject">${email.subject}</div>
+                    <div class="mail-preview">${email.preview}</div>
+                    ${isUnread ? '<div class="mail-unread-indicator"></div>' : ''}
+                </div>
+            `;
+        }
+        
+        this.elements.mailboxList.innerHTML = html;
+        
+        // Agregar event listeners
+        const mailItems = this.elements.mailboxList.querySelectorAll('.mail-item');
+        mailItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const mailId = item.getAttribute('data-mail-id');
+                this.renderEmailViewer(mailId);
+            });
+        });
+    }
+
+    renderEmailViewer(emailId) {
+        if (!this.elements.mailViewer || !this.emailsData) return;
+        
+        const email = this.emailsData.emails.find(e => e.id === emailId);
+        if (!email) return;
+        
+        // Marcar como leído
+        this.markEmailAsRead(emailId);
+        
+        // Renderizar contenido del email
+        let html = `
+            <div class="mail-viewer-header">
+                <button class="mail-back-btn" id="mailBackBtn">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </button>
+            </div>
+            <div class="mail-viewer-content">
+                <div class="mail-viewer-meta">
+                    <div class="mail-viewer-subject">${email.subject}</div>
+                    <div class="mail-viewer-info">
+                        <span><i class="fas fa-user"></i> ${email.sender}</span>
+                        <span><i class="fas fa-calendar"></i> ${this.formatDate(email.date)}</span>
+                    </div>
+                </div>
+                <div class="mail-viewer-body">${email.body.replace(/\n/g, '<br>')}</div>
+        `;
+        
+        // Renderizar adjuntos si existen
+        if (email.attachments && email.attachments.length > 0) {
+            html += `<div class="mail-attachments">`;
+            html += `<div class="mail-attachments-title"><i class="fas fa-paperclip"></i> Archivos adjuntos (${email.attachments.length})</div>`;
+            html += `<div class="mail-attachments-grid">`;
+            
+            for (const attachment of email.attachments) {
+                const isEncrypted = attachment.type.includes('encrypted');
+                const icon = this.getAttachmentIcon(attachment);
+                
+                html += `
+                    <div class="mail-attachment-card" data-attachment='${JSON.stringify(attachment)}'>
+                        <div class="attachment-icon">
+                            <i class="fas ${icon}"></i>
+                            ${isEncrypted ? '<i class="fas fa-lock attachment-lock"></i>' : ''}
+                        </div>
+                        <div class="attachment-name">${attachment.name}</div>
+                        <div class="attachment-progress" style="display: none;">
+                            <div class="attachment-progress-bar"></div>
+                            <div class="attachment-progress-text">0%</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += `</div></div>`;
+        }
+        
+        html += `</div>`;
+        
+        this.elements.mailViewer.innerHTML = html;
+        this.elements.mailViewer.classList.add("show");
+        
+        // Event listener para botón de volver
+        const backBtn = document.getElementById('mailBackBtn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                this.elements.mailViewer.classList.remove("show");
+            });
+        }
+        
+        // Event listeners para adjuntos
+        const attachmentCards = this.elements.mailViewer.querySelectorAll('.mail-attachment-card');
+        attachmentCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const attachmentData = JSON.parse(card.getAttribute('data-attachment'));
+                this.handleAttachmentClick(attachmentData, card);
+            });
+        });
+    }
+
+    getAttachmentIcon(attachment) {
+        if (attachment.type.includes('image')) return 'fa-image';
+        if (attachment.type.includes('pdf')) return 'fa-file-pdf';
+        if (attachment.type === 'file') {
+            const ext = attachment.name.split('.').pop().toLowerCase();
+            if (['pdf'].includes(ext)) return 'fa-file-pdf';
+            if (['doc', 'docx'].includes(ext)) return 'fa-file-word';
+            if (['xls', 'xlsx'].includes(ext)) return 'fa-file-excel';
+        }
+        return 'fa-file';
+    }
+
+    async handleAttachmentClick(attachment, cardElement) {
+        const isEncrypted = attachment.type.includes('encrypted');
+        
+        if (isEncrypted) {
+            // Mostrar input de contraseña
+            const password = prompt(`🔒 Este archivo está protegido.\n\nArchivo: ${attachment.name}\n\nIngresa la contraseña:`);
+            
+            if (!password) return;
+            
+            // Mostrar barra de progreso
+            const progressDiv = cardElement.querySelector('.attachment-progress');
+            const progressBar = cardElement.querySelector('.attachment-progress-bar');
+            const progressText = cardElement.querySelector('.attachment-progress-text');
+            
+            if (progressDiv) {
+                progressDiv.style.display = 'block';
+            }
+            
+            try {
+                const blob = await descifrarArchivo(
+                    attachment.url,
+                    attachment.name,
+                    password,
+                    (percent, statusText) => {
+                        if (progressBar) progressBar.style.width = `${percent}%`;
+                        if (progressText) progressText.textContent = percent < 100 ? `${percent}%` : 'Abriendo...';
+                    }
+                );
+                
+                if (blob) {
+                    this.showToast("✅ Archivo desbloqueado");
+                    this.triggerConfetti();
+                    
+                    // Ocultar barra de progreso
+                    if (progressDiv) progressDiv.style.display = 'none';
+                    
+                    // Abrir el archivo según su tipo
+                    const cleanName = attachment.name.replace(/\.(wenc|enc)$/i, "");
+                    
+                    if (attachment.type.includes('image')) {
+                        this.renderMediaModal(blob, cleanName);
+                    } else {
+                        // Forzar descarga
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = cleanName;
+                        a.click();
+                        setTimeout(() => URL.revokeObjectURL(url), 100);
+                    }
+                } else {
+                    if (progressDiv) progressDiv.style.display = 'none';
+                    alert("❌ Contraseña incorrecta");
+                }
+            } catch (error) {
+                if (progressDiv) progressDiv.style.display = 'none';
+                console.error("Error descifrando:", error);
+                alert("❌ Error al descifrar el archivo");
+            }
+        } else {
+            // Archivo no encriptado - descarga directa o vista
+            if (attachment.type.includes('image')) {
+                window.open(attachment.url, '_blank');
+            } else {
+                const a = document.createElement("a");
+                a.href = attachment.url;
+                a.download = attachment.name;
+                a.click();
+            }
+        }
+    }
+
+    markEmailAsRead(emailId) {
+        if (!this.readEmails.has(emailId)) {
+            this.readEmails.add(emailId);
+            localStorage.setItem("readEmails", JSON.stringify([...this.readEmails]));
+            
+            // Actualizar badge
+            const totalEmails = this.emailsData ? this.emailsData.emails.length : 0;
+            const unreadCount = totalEmails - this.readEmails.size;
+            this.updateMailboxBadge(unreadCount);
+            
+            // Actualizar la lista visual
+            this.renderMailboxList();
+        }
+    }
+
+    updateMailboxBadge(unreadCount) {
+        // Badge en el botón del menú
+        if (this.elements.mailboxBadge) {
+            if (unreadCount > 0) {
+                this.elements.mailboxBadge.textContent = unreadCount;
+                this.elements.mailboxBadge.style.display = 'flex';
+            } else {
+                this.elements.mailboxBadge.style.display = 'none';
+            }
+        }
+        
+        // Badge en el icono del menú hamburguesa
+        if (this.elements.menuBadge) {
+            if (unreadCount > 0) {
+                this.elements.menuBadge.style.display = 'block';
+            } else {
+                this.elements.menuBadge.style.display = 'none';
+            }
+        }
+    }
+
+    formatDate(dateString) {
+        const date = new Date(dateString);
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return date.toLocaleDateString('es-ES', options);
     }
 }
