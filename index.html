@@ -32,12 +32,17 @@
 
   <button id="menuButton" class="menu-button" aria-label="Menú Principal">
     <i class="fas fa-bars"></i>
+    <span id="menuBadge" class="menu-notification-badge" style="display: none;"></span>
   </button>
 
   <nav id="dropdownMenu" class="dropdown-menu">
     <button id="menuHome"><i class="fas fa-home"></i> Inicio</button>
     <button id="menuShowUnlocked"><i class="fas fa-lock-open"></i> Colección</button>
     <button id="menuFavorites"><i class="fas fa-heart"></i> Favoritos</button>
+    <button id="menuMailbox" class="menu-item-with-badge">
+      <i class="fas fa-envelope"></i> Buzón
+      <span id="mailboxBadge" class="mailbox-badge" style="display: none;">0</span>
+    </button>
     <button id="menuAchievements"><i class="fas fa-trophy"></i> Logros</button>
     <button id="menuOracle"><i class="fas fa-moon"></i> Oráculo de Hoy</button>
     <button id="menuAudio"><i class="fas fa-music"></i> Audio</button>
@@ -228,6 +233,28 @@
       </button>
       <div id="readingModeText" class="reading-mode-text">
         <!-- Texto se insertará dinámicamente -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Buzón (Correo Interno) -->
+  <div id="mailboxModal" class="mailbox-modal">
+    <div class="mailbox-modal-content">
+      <div class="mailbox-modal-header">
+        <h2><i class="fas fa-envelope"></i> Buzón</h2>
+        <button id="closeMailboxModal" class="close-modal-btn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <!-- Lista de correos -->
+      <div class="mailbox-list" id="mailboxList">
+        <!-- Se llenará dinámicamente -->
+      </div>
+      
+      <!-- Visor de email -->
+      <div class="mail-viewer" id="mailViewer">
+        <!-- Se llenará dinámicamente -->
       </div>
     </div>
   </div>
