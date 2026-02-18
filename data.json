@@ -1693,42 +1693,57 @@
     }
   },
   "logros": [
-    {
-      "id": "primer_paso",
-      "codigo_requerido": 1,
-      "mensaje": "¡Primer paso desbloqueado! Hay muchos más esperándote."
-    },
-    {
-      "id": "cinco_secretos",
-      "codigo_requerido": 5,
-      "mensaje": "¡Cinco secretos revelados! Eres una gran exploradora."
-    },
-    {
-      "id": "diez_secretos",
-      "codigo_requerido": 10,
-      "mensaje": "¡10 Secretos! Tu curiosidad no tiene límites."
-    },
-    {
-      "id": "veinte_secretos",
-      "codigo_requerido": 20,
-      "mensaje": "¡20 Secretos! Estás descubriendo todo mi mundo."
-    },
-    {
-      "id": "mitad_camino",
-      "codigo_requerido": 40,
-      "mensaje": "¡Vas increíble! Tantos recuerdos desbloqueados..."
-    },
-    {
-      "id": "casi_todo",
-      "codigo_requerido": 70,
-      "mensaje": "¡Wow! Eres experta en descubrir mis secretos."
-    },
-    {
-      "id": "todos_los_secretos",
-      "codigo_requerido": 223,
-      "mensaje": "¡Todos los secretos desbloqueados! Eres mi todo."
-    }
-  ],
+  {
+    "id": "primer_paso",
+    "codigo_requerido": 1,
+    "mensaje": "Primer latido"
+  },
+  {
+    "id": "cinco_secretos",
+    "codigo_requerido": 5,
+    "mensaje": "Puerta de susurros"
+  },
+  {
+    "id": "diez_secretos",
+    "codigo_requerido": 10,
+    "mensaje": "Senda del corazón"
+  },
+  {
+    "id": "veinte_secretos",
+    "codigo_requerido": 20,
+    "mensaje": "Umbral íntimo"
+  },
+  {
+    "id": "cuarenta_secretos",
+    "codigo_requerido": 40,
+    "mensaje": "Eco cercano"
+  },
+  {
+    "id": "setenta_cinco_secretos",
+    "codigo_requerido": 75,
+    "mensaje": "Confidente"
+  },
+  {
+    "id": "mitad_camino",
+    "codigo_requerido": 112,
+    "mensaje": "Mitad del latido"
+  },
+  {
+    "id": "ciento_sesenta_secretos",
+    "codigo_requerido": 160,
+    "mensaje": "Llave casi mía"
+  },
+  {
+    "id": "casi_todo",
+    "codigo_requerido": 200,
+    "mensaje": "Casi en mi abrazo"
+  },
+  {
+    "id": "todos_los_secretos",
+    "codigo_requerido": 223,
+    "mensaje": "Corazón abierto"
+  }
+],
   "herramientasExternas": [
     {
       "nombre": "Desencriptar",
