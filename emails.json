@@ -1,0 +1,40 @@
+{
+  "emails": [
+    {
+      "id": "mail_anniversary_01",
+      "sender": "El Guardián",
+      "subject": "Archivos Recuperados: 2024",
+      "date": "2025-02-14",
+      "preview": "He logrado desencriptar algunos recuerdos especiales...",
+      "body": "Hola, amor mío.\n\nHe encontrado estos archivos antiguos que guardé para ti. Son recuerdos que no quería que se perdieran.\n\nLa contraseña para los archivos cifrados es la fecha de nuestro aniversario en formato DDMMAAAA.\n\nEspero que te traigan la misma alegría que me traen a mí cada vez que los recuerdo.\n\nSiempre tuyo,\nEl Guardián 💜",
+      "attachments": [
+        {
+          "name": "foto_especial.jpg",
+          "type": "encrypted-image",
+          "url": "assets/encrypted/foto_especial.wenc",
+          "key": "14022020"
+        },
+        {
+          "name": "mensaje_de_voz.mp3",
+          "type": "encrypted-file",
+          "url": "assets/encrypted/mensaje.wenc",
+          "key": "14022020"
+        },
+        {
+          "name": "carta_de_amor.pdf",
+          "type": "file",
+          "url": "assets/docs/carta.pdf"
+        }
+      ]
+    },
+    {
+      "id": "mail_surprise_02",
+      "sender": "El Guardián",
+      "subject": "Una pequeña sorpresa para ti",
+      "date": "2025-01-01",
+      "preview": "Feliz año nuevo. Tengo algo especial preparado...",
+      "body": "Mi amor,\n\nFeliz año nuevo. Que este año esté lleno de aventuras juntos, de risas y de nuevos recuerdos que añadir a nuestra colección.\n\nPreparo algo especial para nosotros. Sigue descubriendo los secretos; cada uno tiene un pedacito de mi corazón.\n\nCon todo mi amor,\nEl Guardián 🌟",
+      "attachments": []
+    }
+  ]
+}
