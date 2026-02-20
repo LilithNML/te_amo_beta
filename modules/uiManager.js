@@ -691,7 +691,7 @@ export class UIManager {
     showSuccess(){this.elements.input.classList.remove("error");this.elements.input.classList.add("success");}
     clearInput(){this.elements.input.value="";}
     updateProgress(u,t){const p=t>0?Math.round((u/t)*100):0;this.elements.progressBar.style.width=`${p}%`;this.elements.progressText.textContent=`Descubiertos: ${u} / ${t}`;}
-    showToast(m){const t=document.createElement("div");t.className="achievement-toast";t.textContent=m;this.elements.toastContainer.appendChild(t);setTimeout(()=>t.remove(),4000);}
+    showToast(m){const t=document.createElement("div");t.className="achievement-toast";t.innerHTML=m;this.elements.toastContainer.appendChild(t);setTimeout(()=>t.remove(),4000);}
     updateAudioUI(play,name){const b=document.getElementById("audioPlayPause"); const l=document.getElementById("trackName");if(b)b.innerHTML=play?'<i class="fas fa-pause"></i>':'<i class="fas fa-play"></i>';if(l&&name)l.textContent=name.replace(/_/g," ").replace(/\.[^/.]+$/,"");}
     
     setupMenuListeners(){
