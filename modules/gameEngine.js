@@ -28,6 +28,7 @@ export class GameEngine {
     }
 
     init() {
+        this.checkIncomingSync();
         this.updateProgress();
         this.setupEventListeners();
         this.ui.onToggleFavorite = (code) => this.toggleFavorite(code);
@@ -384,18 +385,95 @@ export class GameEngine {
         }
     }
 
-    // Desactivar modo resonancia
-    deactivateResonanceMode() {
-        this.resonanceMode = false;
-        this.resonanceTarget = null;
-        const input = this.ui.elements.input;
-        if (input) {
-            input.classList.remove('resonance-cold', 'resonance-warm', 'resonance-hot');
+    // ─── Sincronización QR ───────────────────────────────────────────────────
+
+    /**
+     * Detecta si la URL contiene el parámetro ?sync= y, si lo tiene, lanza el
+     * proceso de fusión de datos. Siempre limpia la URL para evitar bucles.
+     */
+    checkIncomingSync() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const syncToken = urlParams.get('sync');
+
+        // Higiene de URL: eliminar el parámetro inmediatamente, ocurra lo que ocurra
+        if (syncToken !== null) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        if (!syncToken) return;
+
+        try {
+            if (typeof LZString === 'undefined') {
+                throw new Error('LZString no está disponible aún.');
+            }
+            const decompressed = LZString.decompressFromEncodedURIComponent(syncToken);
+            if (!decompressed) throw new Error('Token vacío o corrupto tras descomprimir.');
+
+            const incomingData = JSON.parse(decompressed);
+
+            // Validación mínima de estructura esperada
+            if (typeof incomingData !== 'object' || incomingData === null) {
+                throw new Error('Estructura de datos inválida.');
+            }
+
+            this.mergeSyncData(incomingData);
+        } catch (error) {
+            console.error('[QR Sync] Fallo al sincronizar:', error);
+            alert('El código de sincronización no es válido o está corrupto.\nPor favor genera uno nuevo desde el dispositivo de origen.');
         }
     }
 
-    // Manejar input en modo resonancia (tiempo real)
-    handleResonanceInput() {
+    /**
+     * Fusiona los datos entrantes con el localStorage actual usando la estrategia:
+     * - Arrays/Sets → Unión (sin duplicados)
+     * - Métricas escalares → Math.max (nos quedamos con el valor mayor)
+     * @param {Object} data – Objeto descomprimido del token QR
+     */
+    mergeSyncData(data) {
+        const unlockedCount = Array.isArray(data.u) ? data.u.length : 0;
+        const streak = (typeof data.s === 'number') ? data.s : 0;
+
+        const confirmMessage =
+            `¡Sincronización detectada!\n\n` +
+            `Se importarán:\n` +
+            `  • ${unlockedCount} secreto(s) desbloqueado(s)\n` +
+            `  • Racha de ${streak} día(s)\n\n` +
+            `¿Deseas fusionarlo con tu progreso actual?\n` +
+            `(No se perderá ningún avance existente)`;
+
+        if (!confirm(confirmMessage)) return;
+
+        // Función auxiliar para unir un array entrante con el Set/Array guardado en LS
+        const fuseSet = (shortKey, storageKey) => {
+            if (!Array.isArray(data[shortKey])) return;
+            const current = new Set(JSON.parse(localStorage.getItem(storageKey) || '[]'));
+            data[shortKey].forEach(item => current.add(item));
+            localStorage.setItem(storageKey, JSON.stringify([...current]));
+        };
+
+        // Fusionar Arrays/Sets
+        fuseSet('u', 'desbloqueados');
+        fuseSet('f', 'favoritos');
+        fuseSet('l', 'logrosAlcanzados');
+        fuseSet('e', 'readEmails');
+
+        // Fusionar métricas escalares (ganamos con el valor más alto)
+        if (typeof data.s === 'number') {
+            const oldStreak = parseInt(localStorage.getItem('streak') || '0', 10);
+            localStorage.setItem('streak', Math.max(oldStreak, data.s));
+        }
+
+        if (typeof data.m === 'number') {
+            const oldMins = parseInt(localStorage.getItem('minutesOnPage') || '0', 10);
+            localStorage.setItem('minutesOnPage', Math.max(oldMins, data.m));
+        }
+
+        alert('✓ Progreso fusionado exitosamente. La página se recargará.');
+        window.location.reload();
+    }
+
+    // Desactivar modo resonancia
+    deactivateResonanceMode() {
         if (!this.resonanceMode) return;
         
         const input = this.ui.elements.input;
