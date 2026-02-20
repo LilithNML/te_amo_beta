@@ -66,6 +66,7 @@ export class UIManager {
         this.showingFavoritesOnly = false;
         this.typewriterTimeout = null;
         this.statsData = this.loadStatsData(); // Cargar estadísticas
+        this.currentActiveCode = null; // Código visible en pantalla (para double-tap favorite)
         
         // Estado del buzón
         this.emailsData = null;
@@ -84,6 +85,8 @@ export class UIManager {
         this.initDynamicPlaceholder();
         this.updateDynamicGreeting(); // Actualizar saludo
         this.checkMailboxNotifications(); // Verificar notificaciones
+        this.setupDoubleTapFavorite(); // Gesto double-tap para favorito
+        this._injectDoubleTapStyles(); // Inyectar CSS de animación
     }
 
     // Cargar estadísticas del localStorage
@@ -1621,5 +1624,247 @@ export class UIManager {
         const date = new Date(dateString);
         const options = { year: 'numeric', month: 'short', day: 'numeric' };
         return date.toLocaleDateString('es-ES', options);
+    }
+
+    // ===========================================
+    // DOUBLE-TAP TO FAVORITE
+    // ===========================================
+
+    /**
+     * Inyecta los estilos CSS de la animación del corazón directamente en el documento.
+     * Así evitamos tocar style.css y la función es totalmente autocontenida.
+     */
+    _injectDoubleTapStyles() {
+        if (document.getElementById('double-tap-styles')) return;
+        const style = document.createElement('style');
+        style.id = 'double-tap-styles';
+        style.textContent = `
+            /* ---- Overlay invisible sobre el contenido ---- */
+            .dbl-tap-overlay {
+                position: absolute;
+                inset: 0;
+                pointer-events: none; /* No bloquea YouTube ni scroll de imagen */
+                z-index: 20;
+                overflow: hidden;
+                border-radius: inherit;
+            }
+
+            /* ---- Corazón animado ---- */
+            .dbl-tap-heart {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%) scale(0);
+                width: 90px;
+                height: 90px;
+                color: var(--highlight-pink, #ff4d6d);
+                pointer-events: none;
+                animation: dtf-heart-burst 0.75s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+            }
+
+            .dbl-tap-heart svg {
+                width: 100%;
+                height: 100%;
+                fill: currentColor;
+                filter: drop-shadow(0 0 14px color-mix(in srgb, var(--highlight-pink, #ff4d6d) 60%, transparent));
+            }
+
+            @keyframes dtf-heart-burst {
+                0%   { transform: translate(-50%, -50%) scale(0)    rotate(var(--dtf-rot)); opacity: 1; }
+                35%  { transform: translate(-50%, -50%) scale(1.25) rotate(var(--dtf-rot)); opacity: 1; }
+                55%  { transform: translate(-50%, -50%) scale(0.95) rotate(var(--dtf-rot)); opacity: 1; }
+                100% { transform: translate(-50%, calc(-50% - 40px)) scale(0.8) rotate(var(--dtf-rot)); opacity: 0; }
+            }
+
+            /* ---- Ripple de "ya es favorito" ---- */
+            @keyframes dtf-ripple {
+                0%   { transform: translate(-50%, -50%) scale(0.9); opacity: 0.9; }
+                100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+            }
+
+            .dbl-tap-ripple {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                width: 90px;
+                height: 90px;
+                border-radius: 50%;
+                background: color-mix(in srgb, var(--highlight-pink, #ff4d6d) 35%, transparent);
+                pointer-events: none;
+                animation: dtf-ripple 0.55s ease-out forwards;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    /**
+     * Registra la detección de doble toque sobre el contenedor principal de resultados.
+     * Usa pointer events para compatibilidad mouse + touch.
+     */
+    setupDoubleTapFavorite() {
+        const container = this.elements.contentDiv;
+        if (!container) return;
+
+        // Aseguramos que el contenedor tenga posición relativa para el overlay absoluto
+        container.style.position = 'relative';
+
+        // Crear el overlay invisible (pointer-events: none en CSS)
+        const overlay = document.createElement('div');
+        overlay.className = 'dbl-tap-overlay';
+        container.appendChild(overlay);
+        this._dtfOverlay = overlay;
+
+        let lastTap = 0;
+
+        container.addEventListener('pointerdown', (e) => {
+            // Ignorar si no hay código activo
+            if (!this.currentActiveCode) return;
+
+            const now = Date.now();
+            const delta = now - lastTap;
+
+            if (delta > 0 && delta < 320) {
+                // ¡Doble toque detectado!
+                e.stopPropagation();
+                this._handleDoubleTapFavorite();
+                lastTap = 0; // Reset para evitar triple-tap
+            } else {
+                lastTap = now;
+            }
+        });
+    }
+
+    /**
+     * Lógica que se ejecuta al detectar el doble toque:
+     * - Toggle favorito mediante el callback ya existente (onToggleFavorite)
+     * - Anima el corazón
+     * - Reproduce el sonido sparkle
+     */
+    _handleDoubleTapFavorite() {
+        const code = this.currentActiveCode;
+        if (!code || !this.onToggleFavorite) return;
+
+        // Toggle favorito (reutiliza la lógica ya existente del gameEngine)
+        const wasFavorite = this._isFavoriteNow(code);
+        this.onToggleFavorite(code);
+        const isNowFavorite = !wasFavorite;
+
+        // Feedback visual
+        if (isNowFavorite) {
+            this._animateHeart();
+        } else {
+            this._animateRipple();
+        }
+
+        // Feedback auditivo
+        this._playSparkleSound(isNowFavorite);
+
+        // Toast sutil
+        const msg = isNowFavorite
+            ? `${getSVGIcon('heart')} ¡Guardado en favoritos!`
+            : `${getSVGIcon('heart')} Eliminado de favoritos`;
+        this.showToast(msg);
+    }
+
+    /**
+     * Determina si el código actual es favorito consultando la lista renderizada.
+     * Evita acoplamiento con gameEngine: lee el botón de la lista.
+     */
+    _isFavoriteNow(code) {
+        // La forma más fiable: buscar en la lista renderizada
+        const btn = this.elements.unlockedList
+            ? this.elements.unlockedList.querySelector(`.favorite-toggle-btn.active`)
+            : null;
+        // Fallback: revisar el li del código correcto
+        if (this.elements.unlockedList) {
+            const items = this.elements.unlockedList.querySelectorAll('.lista-codigo-item');
+            for (const item of items) {
+                const span = item.querySelector('.codigo-text');
+                if (span && span.textContent.trim() === code) {
+                    const fb = item.querySelector('.favorite-toggle-btn');
+                    return fb ? fb.classList.contains('active') : false;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Crea y anima el corazón SVG sobre el overlay.
+     */
+    _animateHeart() {
+        const overlay = this._dtfOverlay;
+        if (!overlay) return;
+
+        const heart = document.createElement('div');
+        heart.className = 'dbl-tap-heart';
+
+        // Rotación aleatoria entre -10 y +10 grados
+        const rot = (Math.random() * 20 - 10).toFixed(1) + 'deg';
+        heart.style.setProperty('--dtf-rot', rot);
+
+        // Usar el SVG del corazón del proyecto
+        heart.innerHTML = getSVGIcon('heart');
+
+        overlay.appendChild(heart);
+
+        // Eliminar el elemento una vez finalizada la animación
+        heart.addEventListener('animationend', () => heart.remove(), { once: true });
+    }
+
+    /**
+     * Ripple suave para cuando se ELIMINA de favoritos.
+     */
+    _animateRipple() {
+        const overlay = this._dtfOverlay;
+        if (!overlay) return;
+
+        const ripple = document.createElement('div');
+        ripple.className = 'dbl-tap-ripple';
+        overlay.appendChild(ripple);
+        ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
+    }
+
+    /**
+     * Genera un acorde de dos notas "sparkle" mediante Web Audio API.
+     * Sin archivos externos → sin latencia.
+     * @param {boolean} isAdding - true = añadir (notas más agudas), false = eliminar (más graves)
+     */
+    _playSparkleSound(isAdding = true) {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Frecuencias del acorde: dos notas brillantes
+            const notes = isAdding
+                ? [1047, 1319]  // Do6 + Mi6 — brillante y alegre
+                : [784, 659];   // Sol5 + Mi5 — más suave, "deseleccionando"
+
+            notes.forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+                // Ataque instantáneo, decaimiento rápido (estilo pizzicato)
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.28, ctx.currentTime + 0.01 + i * 0.07);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35 + i * 0.07);
+
+                osc.start(ctx.currentTime + i * 0.07);
+                osc.stop(ctx.currentTime + 0.4 + i * 0.07);
+
+                // Liberar el contexto cuando el último oscilador termine
+                if (i === notes.length - 1) {
+                    osc.onended = () => ctx.close();
+                }
+            });
+        } catch (e) {
+            // El audio no es crítico; fallar silenciosamente
+            console.warn('SparkleSound no disponible:', e);
+        }
     }
 }
