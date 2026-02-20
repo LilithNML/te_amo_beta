@@ -886,26 +886,7 @@ export class UIManager {
                 li.className="lista-codigo-item"; li.innerHTML=`<div style="flex-grow:1"><span class="codigo-text">${code}</span><span class="category">${d.categoria}</span></div>`;
                 const fb=document.createElement("button");fb.className=`favorite-toggle-btn ${f.has(code)?'active':''}`;fb.innerHTML=`<i class="${f.has(code)?'fas':'far'} fa-heart"></i>`;
                 fb.onclick=(e)=>{e.stopPropagation();if(this.onToggleFavorite)this.onToggleFavorite(code);};
-                // --- QUICK-TAP FAVORITE: doble toque sobre la tarjeta ---
-                let _tapTimer = null;
-                li.addEventListener('click', (e) => {
-                    if (e.target.closest('.favorite-toggle-btn')) return;
-                    if (_tapTimer) {
-                        clearTimeout(_tapTimer);
-                        _tapTimer = null;
-                        if (this.onToggleFavorite) this.onToggleFavorite(code);
-                        this.showHeartBurst(li);
-                        if (window.audioManager) window.audioManager.playFavoriteChime();
-                        if (navigator.vibrate) navigator.vibrate(40);
-                    } else {
-                        _tapTimer = setTimeout(() => {
-                            _tapTimer = null;
-                            if (this.onCodeSelected) this.onCodeSelected(code);
-                            this.elements.contentDiv.scrollIntoView({behavior:'smooth'});
-                        }, 300);
-                    }
-                });
-                li.appendChild(fb);
+                li.onclick=()=>{if(this.onCodeSelected)this.onCodeSelected(code);this.elements.contentDiv.scrollIntoView({behavior:'smooth'});}; li.appendChild(fb);
             }else{
                 li.className="lista-codigo-item locked"; li.innerHTML=`<div style="flex-grow:1;display:flex;align-items:center;"><i class="fas fa-lock lock-icon"></i><div><span class="codigo-text">??????</span><span class="category" style="opacity:0.5">${d.categoria||'Secreto'}</span></div></div>`;
                 li.onclick=()=>this.showToast(`${getSVGIcon('lock')} ¡Sigue buscando!`);
@@ -913,21 +894,6 @@ export class UIManager {
             this.elements.unlockedList.appendChild(li);
         });
         if(vc===0)this.elements.unlockedList.innerHTML='<p style="text-align:center;width:100%;opacity:0.7">Sin resultados.</p>';
-    }
-
-    /**
-     * Muestra el corazón SVG en el centro de la tarjeta con efecto burst/pulso.
-     * @param {HTMLElement} cardElement - El elemento <li> de la tarjeta
-     */
-    showHeartBurst(cardElement) {
-        if (!cardElement.style.position || cardElement.style.position === 'static') {
-            cardElement.style.position = 'relative';
-        }
-        const burst = document.createElement('span');
-        burst.className = 'heart-burst-overlay';
-        burst.innerHTML = getSVGIcon('heart', 'heart-burst-icon');
-        cardElement.appendChild(burst);
-        burst.addEventListener('animationend', () => burst.remove(), { once: true });
     }
     
     exportProgress(){
