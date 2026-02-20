@@ -387,7 +387,7 @@ export class AudioManager {
     toggleShuffle() {
         this.isShuffling = !this.isShuffling;
         localStorage.setItem("audioShuffle", this.isShuffling.toString());
-        this.ui.showToast(this.isShuffling ? "🔀 Aleatorio Activado" : "▶️ Orden Normal");
+        this.ui.showToast(this.isShuffling ? "Aleatorio Activado" : "Orden Normal");
         this.updateUI();
     }
 
@@ -396,7 +396,7 @@ export class AudioManager {
         this.isMuted = !this.isMuted;
         this.bgMusic.muted = this.isMuted;
         localStorage.setItem("audioMuted", this.isMuted.toString());
-        this.ui.showToast(this.isMuted ? "🔇 Silenciado" : "🔊 Audio Activado");
+        this.ui.showToast(this.isMuted ? "Silenciado" : "Audio Activado");
         this.updateUI();
     }
 
