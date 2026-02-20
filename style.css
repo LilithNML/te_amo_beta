@@ -2372,3 +2372,149 @@ body.dark-mode .reading-mode-content {
     padding: 15px 20px;
   }
 }
+
+/* =========================================
+   ICONOS SVG - Estilos para reemplazo de emojis
+   ========================================= */
+
+/* Contenedor base para iconos SVG */
+.svg-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+/* Estilos generales para todos los iconos SVG */
+.svg-icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  vertical-align: middle;
+  fill: currentColor;
+  transition: transform 0.2s ease;
+}
+
+/* Iconos individuales con colores específicos */
+.icon-lightbulb {
+  color: var(--highlight-gold);
+}
+
+.icon-error {
+  color: var(--highlight-red);
+}
+
+.icon-error-color {
+  color: var(--highlight-red) !important;
+}
+
+.icon-success {
+  color: var(--highlight-green);
+}
+
+.icon-success-color {
+  color: var(--highlight-green) !important;
+}
+
+.icon-lock {
+  color: var(--text-medium);
+}
+
+.icon-unlocked {
+  color: var(--highlight-green);
+}
+
+.icon-celebration {
+  color: var(--highlight-pink);
+  animation: celebration-pulse 0.6s ease infinite;
+}
+
+.icon-trophy {
+  color: var(--highlight-gold);
+}
+
+.icon-fire {
+  color: #ff6b35;
+}
+
+.icon-fire-color {
+  color: #ff6b35 !important;
+}
+
+.icon-sparkles {
+  color: var(--highlight-pink-light);
+  animation: sparkle-twinkle 1.5s ease-in-out infinite;
+}
+
+.icon-moon {
+  color: var(--progress-color);
+}
+
+.icon-star {
+  color: var(--highlight-gold);
+}
+
+.icon-heart {
+  color: var(--highlight-pink);
+}
+
+.icon-heart-purple,
+.icon-purple {
+  color: #A860A8 !important;
+}
+
+/* Animaciones para iconos */
+@keyframes celebration-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes sparkle-twinkle {
+  0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
+  50% { opacity: 0.7; transform: scale(1.05) rotate(5deg); }
+}
+
+/* Hover effects para iconos interactivos */
+.svg-icon:hover {
+  transform: scale(1.1);
+}
+
+/* Iconos en toasts */
+.achievement-toast .svg-icon {
+  margin-right: 0.5em;
+  flex-shrink: 0;
+}
+
+/* Iconos en mensajes */
+.contenido-container .svg-icon {
+  margin-right: 0.3em;
+  vertical-align: -0.1em;
+}
+
+/* Modo oscuro */
+body.dark-mode .icon-lightbulb {
+  color: #FFD700;
+}
+
+body.dark-mode .icon-fire {
+  color: #ff8555;
+}
+
+body.dark-mode .icon-sparkles {
+  color: var(--highlight-pink);
+}
+
+/* Responsividad de iconos */
+@media (max-width: 768px) {
+  .svg-icon {
+    width: 0.95em;
+    height: 0.95em;
+  }
+}
+
+/* Asegurar que los SVG no se deformen */
+.svg-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
