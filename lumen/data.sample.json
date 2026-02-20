@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "2.0",
+  "mensajes": {
+    "bienvenida": {
+      "type": "text",
+      "categoria": "Carta",
+      "pista": "El primer mensaje que te escribí con el corazón.",
+      "texto": "Mi amor:\n\nEste es el principio de algo muy especial.\nCada código que descubras es una parte de mí que quiero compartir contigo.\n\nCon todo mi cariño."
+    },
+    "recuerdovideo": {
+      "type": "video",
+      "categoria": "YouTube",
+      "pista": "El video que guardé solo para tus ojos.",
+      "videoEmbed": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "texto": "Este video me recuerda a nosotros cada vez que lo veo."
+    },
+    "fotoesquina": {
+      "type": "image",
+      "categoria": "Imagen",
+      "pista": "Una imagen vale más que mil palabras.",
+      "imagen": "assets/unlocked_content/images/foto-especial.jpg"
+    },
+    "melodia": {
+      "type": "audio",
+      "categoria": "Audio",
+      "pista": "Cierra los ojos y escucha.",
+      "audio": "assets/unlocked_content/audio/cancion-favorita.ogg"
+    },
+    "momentomagico": {
+      "type": "image_audio",
+      "categoria": "Audio e Imagen",
+      "pista": "Imagen y sonido juntos, como nosotros.",
+      "imagen": "assets/unlocked_content/images/momento-magico.webp",
+      "audio": "assets/unlocked_content/audio/momento-magico.ogg"
+    },
+    "fotosecreta": {
+      "type": "download",
+      "categoria": "Fotos",
+      "pista": "Un recuerdo guardado bajo llave, solo para ti.",
+      "descarga": {
+        "url": "assets/unlocked_content/encrypted/recuerdo-secreto.jpg.wenc",
+        "nombre": "recuerdo-secreto.jpg.wenc"
+      }
+    },
+    "playlist": {
+      "type": "link",
+      "categoria": "Url",
+      "pista": "La playlist que armé pensando solo en ti.",
+      "link": "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M"
+    },
+    "cartainteractiva": {
+      "type": "internal",
+      "categoria": "Iframe",
+      "pista": "Una experiencia que diseñé especialmente para este momento.",
+      "archivo": "assets/unlocked_content/pages/carta-interactiva.html"
+    }
+  },
+  "logros": [
+    {
+      "id": "primer_paso",
+      "codigo_requerido": 1,
+      "mensaje": "¡Primer código desbloqueado! Hay muchos más esperándote."
+    },
+    {
+      "id": "cinco_secretos",
+      "codigo_requerido": 5,
+      "mensaje": "¡Cinco secretos revelados! Eres una gran exploradora."
+    },
+    {
+      "id": "todos_desbloqueados",
+      "codigo_requerido": 8,
+      "mensaje": "¡Lo has descubierto todo! Eres mi todo."
+    }
+  ]
+}

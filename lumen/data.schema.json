@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "$id": "https://github.com/tu-org/lumen-editor/schema/data.schema.json",
+  "title": "Lumen Data Core — data.json Schema",
+  "description": "Contrato formal del archivo data.json generado por Lumen Editor v2.0",
+  "version": "2.0",
+  "type": "object",
+  "required": ["mensajes", "logros"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "description": "Versión del esquema. Debe ser '2.0' para archivos generados por Lumen v2.",
+      "enum": ["1.0", "2.0"],
+      "default": "2.0"
+    },
+    "mensajes": {
+      "type": "object",
+      "description": "Colección de mensajes desbloqueables. Cada clave es el código de desbloqueo normalizado (slug).",
+      "additionalProperties": {
+        "$ref": "#/$defs/Mensaje"
+      }
+    },
+    "logros": {
+      "type": "array",
+      "description": "Lista de hitos de gamificación basados en la progresión del usuario.",
+      "items": {
+        "$ref": "#/$defs/Logro"
+      }
+    }
+  },
+  "$defs": {
+    "Mensaje": {
+      "type": "object",
+      "description": "Objeto de configuración de un mensaje desbloqueable.",
+      "required": ["type", "categoria", "pista"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Tipo de contenido que determina los campos dinámicos requeridos y el comportamiento del visualizador.",
+          "enum": ["text", "video", "image", "audio", "image_audio", "download", "link", "internal"]
+        },
+        "categoria": {
+          "type": "string",
+          "description": "Etiqueta de categoría asignada automáticamente por el editor según el type. Usada para filtrado en la UI.",
+          "enum": ["Carta", "YouTube", "Imagen", "Audio", "Audio e Imagen", "Protegido", "Url", "Iframe", "Fotos", "Cosplay", "Pensamiento"]
+        },
+        "pista": {
+          "type": "string",
+          "description": "Texto visible al usuario antes de desbloquear el ítem. Actúa como ayuda o descripción.",
+          "minLength": 1
+        },
+        "texto": {
+          "type": "string",
+          "description": "Contenido narrativo o descriptivo. Saltos de línea representados como \\n literal.",
+          "minLength": 1
+        },
+        "videoEmbed": {
+          "type": "string",
+          "description": "URL de embed de YouTube. Formato: https://www.youtube.com/embed/{ID_11_CHARS}",
+          "pattern": "^https://www\\.youtube\\.com/embed/[a-zA-Z0-9_-]{11}$"
+        },
+        "imagen": {
+          "type": "string",
+          "description": "Ruta relativa al recurso gráfico. Prefijo: assets/unlocked_content/images/",
+          "pattern": "^assets/unlocked_content/images/.+\\.(jpg|jpeg|png|webp|gif)$"
+        },
+        "audio": {
+          "type": "string",
+          "description": "Ruta relativa al recurso sonoro. Prefijo: assets/unlocked_content/audio/",
+          "pattern": "^assets/unlocked_content/audio/.+\\.(mp3|ogg|wav|flac|m4a)$"
+        },
+        "descarga": {
+          "$ref": "#/$defs/Descarga"
+        },
+        "link": {
+          "type": "string",
+          "description": "URL externa completa. Debe incluir protocolo http:// o https://",
+          "pattern": "^https?://.+"
+        },
+        "archivo": {
+          "type": "string",
+          "description": "Ruta de archivo interno para renderizado en iframe.",
+          "minLength": 1
+        },
+        "rawName": {
+          "type": "string",
+          "description": "Nombre original antes de normalizar (uso interno del editor). No afecta al visualizador."
+        }
+      },
+      "if": {
+        "properties": { "type": { "const": "text" } }
+      },
+      "then": {
+        "required": ["texto"]
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "video" } } },
+          "then": { "required": ["videoEmbed"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "image" } } },
+          "then": { "required": ["imagen"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "audio" } } },
+          "then": { "required": ["audio"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "image_audio" } } },
+          "then": { "required": ["imagen", "audio"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "download" } } },
+          "then": { "required": ["descarga"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "link" } } },
+          "then": { "required": ["link"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "internal" } } },
+          "then": { "required": ["archivo"] }
+        }
+      ]
+    },
+    "Descarga": {
+      "type": "object",
+      "description": "Referencia a un archivo protegido/cifrado (.wenc u otro formato).",
+      "required": ["url", "nombre"],
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "Ruta relativa completa al archivo encriptado.",
+          "pattern": "^assets/unlocked_content/encrypted/.+"
+        },
+        "nombre": {
+          "type": "string",
+          "description": "Nombre del archivo para presentar al usuario al descargar.",
+          "minLength": 1
+        }
+      }
+    },
+    "Logro": {
+      "type": "object",
+      "description": "Hito de gamificación que se activa cuando el usuario desbloquea una cantidad determinada de códigos.",
+      "required": ["id", "codigo_requerido", "mensaje"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador único del logro. Debe ser un slug normalizado (alfanumérico, sin acentos, lowercase).",
+          "pattern": "^[a-z0-9]+$",
+          "minLength": 1
+        },
+        "codigo_requerido": {
+          "type": "integer",
+          "description": "Cantidad de códigos que el usuario debe haber desbloqueado para activar este hito.",
+          "minimum": 1
+        },
+        "mensaje": {
+          "type": "string",
+          "description": "Notificación o felicitación que recibe el usuario al alcanzar el hito.",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

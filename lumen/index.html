@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumen</title>
+    <style>
+        /* ====================
+           CSS SYSTEM & VARIABLES
+           ==================== */
+        :root {
+            /* Colores Base - Modo Claro */
+            --bg-color: #f4f4f9;
+            --surface-color: #ffffff;
+            --text-primary: #1e1e24;
+            --text-secondary: #5c5c6b;
+            --border-color: #e0e0e8;
+            --primary-color: #4a6fa5;
+            --primary-hover: #3b5984;
+            --danger-color: #e63946;
+            --danger-hover: #cc333f;
+            --success-color: #2a9d8f;
+            --warning-color: #f4a261;
+            --input-bg: #ffffff;
+            --modal-bg: rgba(0, 0, 0, 0.5);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 8px;
+            --transition: all 0.2s ease-in-out;
+        }
+
+        [data-theme="dark"] {
+            /* Colores Base - Modo Oscuro */
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border-color: #333333;
+            --primary-color: #bb86fc;
+            --primary-hover: #9965f4;
+            --danger-color: #cf6679;
+            --danger-hover: #b55365;
+            --success-color: #03dac6;
+            --warning-color: #ffb74d;
+            --input-bg: #2d2d2d;
+            --modal-bg: rgba(0, 0, 0, 0.7);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ====================
+           RESET & GLOBALS
+           ==================== */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; transition: var(--transition); }
+        input, select, textarea { font-family: inherit; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius); background-color: var(--input-bg); color: var(--text-primary); transition: var(--transition); }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(187, 134, 252, 0.2); }
+        textarea { resize: vertical; min-height: 100px; }
+        .hidden { display: none !important; }
+
+        /* ====================
+           LAYOUT
+           ==================== */
+        .app-container { max-width: 1000px; margin: 0 auto; padding: 1rem; display: flex; flex-direction: column; min-height: 100vh; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 1rem; }
+        .header-logo { display: flex; align-items: center; gap: 0.5rem; font-size: 1.5rem; font-weight: bold; color: var(--primary-color); }
+        .header-search { flex: 1; max-width: 400px; position: relative; }
+        .header-actions { display: flex; gap: 1rem; align-items: center; }
+
+        main { flex: 1; display: flex; flex-direction: column; gap: 1.5rem; }
+
+        /* ====================
+           SEARCH
+           ==================== */
+        .search-input-wrapper { position: relative; width: 100%; }
+        .search-input-wrapper svg { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); pointer-events: none; }
+        .search-input { padding-left: 2.5rem; }
+        .search-results { position: absolute; top: calc(100% + 0.5rem); left: 0; right: 0; background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius); box-shadow: var(--shadow); max-height: 400px; overflow-y: auto; z-index: 100; }
+        .search-result-item { padding: 0.75rem; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: var(--transition); }
+        .search-result-item:hover, .search-result-item.active { background: var(--border-color); }
+        .search-result-item:last-child { border-bottom: none; }
+        .search-result-info { flex: 1; }
+        .search-result-name { font-weight: 600; }
+        .search-result-meta { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
+        .search-result-badge { font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 12px; background: var(--primary-color); color: #fff; }
+        .search-empty { padding: 1.5rem; text-align: center; color: var(--text-secondary); }
+        .search-count { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border-color); font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; }
+
+        /* ====================
+           COMPONENTS
+           ==================== */
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: var(--radius); font-weight: 600; cursor: pointer; text-align: center; }
+        .btn-primary { background-color: var(--primary-color); color: #fff; }
+        .btn-primary:hover:not(:disabled) { background-color: var(--primary-hover); }
+        .btn-secondary { background-color: var(--surface-color); border: 1px solid var(--border-color); }
+        .btn-secondary:hover:not(:disabled) { background-color: var(--border-color); }
+        .btn-danger { background-color: var(--danger-color); color: #fff; }
+        .btn-danger:hover:not(:disabled) { background-color: var(--danger-hover); }
+        .btn-icon { padding: 0.5rem; border-radius: var(--radius); background: var(--surface-color); border: 1px solid var(--border-color); }
+        .btn-icon:hover { background: var(--border-color); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Landing View */
+        .landing-card { background-color: var(--surface-color); padding: 3rem 2rem; border-radius: var(--radius); box-shadow: var(--shadow); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+        .landing-card > svg { width: 64px; height: 64px; color: var(--primary-color); }
+        .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
+        .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
+
+        /* Editor View */
+        .tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
+        .tab { padding: 0.75rem 1.5rem; border-bottom: 2px solid transparent; font-weight: 600; color: var(--text-secondary); opacity: 0.7; }
+        .tab.active { border-bottom-color: var(--primary-color); color: var(--primary-color); opacity: 1; }
+
+        .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .list-header h3 { display: flex; align-items: center; gap: 0.5rem; }
+        
+        .badge-count { background: var(--primary-color); color: #fff; font-size: 0.8rem; font-weight: bold; padding: 0.1rem 0.6rem; border-radius: 999px; }
+
+        .empty-state { padding: 3rem; text-align: center; color: var(--text-secondary); background: var(--surface-color); border-radius: var(--radius); border: 1px dashed var(--border-color); }
+
+        .item-list { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+        @media (min-width: 768px) { .item-list { grid-template-columns: repeat(2, 1fr); } }
+
+        .card { background-color: var(--surface-color); padding: 1rem; border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 0.5rem; border: 1px solid transparent; }
+        .card:hover { border-color: var(--border-color); }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .card-title { font-weight: bold; word-break: break-all; font-size: 1.1rem; }
+        .card-badge { font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 12px; background: var(--primary-color); color: #fff; font-weight: normal; }
+        .card-body { color: var(--text-secondary); font-size: 0.9rem; flex: 1; }
+        .card-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+
+        /* Modals */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--modal-bg); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content { background-color: var(--surface-color); padding: 2rem; border-radius: var(--radius); width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.5); transform: translateY(20px); transition: transform 0.2s; }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-title { font-size: 1.25rem; font-weight: bold; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; }
+        .form-hint { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; }
+        .form-hint.success { color: var(--success-color); }
+        .form-hint.error { color: var(--danger-color); }
+        .form-hint.warning { color: var(--warning-color); }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+
+        .toast { position: fixed; bottom: 20px; right: 20px; background: var(--surface-color); border-left: 4px solid var(--primary-color); padding: 1rem 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow); z-index: 1100; transform: translateX(120%); transition: transform 0.3s; }
+        .toast.show { transform: translateX(0); }
+        .toast.error { border-left-color: var(--danger-color); }
+        .toast.success { border-left-color: var(--success-color); }
+        .toast.warning { border-left-color: var(--warning-color); }
+
+        /* Invalid item styles */
+        .card.card-invalid { border-color: var(--danger-color) !important; background: color-mix(in srgb, var(--surface-color) 92%, var(--danger-color) 8%); }
+        .badge-invalid { background: var(--danger-color); color: #fff; font-size: 0.7rem; font-weight: bold; padding: 0.15rem 0.5rem; border-radius: 999px; margin-left: 0.4rem; vertical-align: middle; }
+        .badge-count-danger { background: var(--danger-color); color: #fff; font-size: 0.8rem; font-weight: bold; padding: 0.1rem 0.6rem; border-radius: 999px; margin-left: 0.4rem; }
+        .import-error-row { padding: 0.3rem 0; border-bottom: 1px solid var(--border-color); }
+        .import-error-row:last-child { border-bottom: none; }
+        .import-error-id { color: var(--text-primary); font-weight: bold; }
+        .search-count-link { color: var(--primary-color); cursor: pointer; text-decoration: underline; font-size: 0.8rem; margin-left: 0.5rem; background: none; border: none; padding: 0; font-family: inherit; }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <div class="header-logo">
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            Lumen
+        </div>
+        <div id="search-container" class="header-search hidden">
+            <div class="search-input-wrapper">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="search-input" class="search-input" placeholder="Buscar por nombre, ID o categoría..." autocomplete="off">
+                <div id="search-results" class="search-results hidden"></div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button id="btn-theme-toggle" class="btn-icon" title="Cambiar Tema">
+                <svg id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                <svg id="icon-sun" class="hidden" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </button>
+            <div id="editor-actions" class="hidden" style="display: flex; gap: 0.5rem;">
+                <button id="btn-home" class="btn btn-secondary" title="Volver al Inicio">
+                    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                </button>
+                <button id="btn-download" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Descargar
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- LANDING VIEW -->
+    <main id="view-landing">
+        <div class="landing-card">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <h2>Editor Visual de Estructuras</h2>
+            <p style="color: var(--text-secondary); max-width: 500px;">Crea o edita archivos <code>data.json</code> sin tocar código. El sistema gestionará automáticamente las rutas de los assets y la validación estructural.</p>
+            
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-top: 1rem;">
+                <button id="btn-create-new" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Crear Nuevo Archivo
+                </button>
+                
+                <div class="file-upload-wrapper">
+                    <button class="btn btn-secondary">
+                        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        Cargar JSON Existente
+                    </button>
+                    <input type="file" id="file-input" accept=".json">
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- EDITOR VIEW -->
+    <main id="view-editor" class="hidden">
+        <div class="tabs">
+            <button class="tab active" data-tab="mensajes">Mensajes (Contenido)</button>
+            <button class="tab" data-tab="logros">Logros</button>
+        </div>
+
+        <!-- Tab Mensajes -->
+        <div id="tab-mensajes" class="tab-content">
+            <div class="list-header">
+                <h3>Códigos <span id="count-mensajes" class="badge-count">0</span><span id="count-invalid" class="badge-count-danger hidden" title="Ítems con errores que requieren corrección">0 inválidos</span></h3>
+                <button id="btn-add-mensaje" class="btn btn-primary btn-sm">
+                    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Añadir Ítem
+                </button>
+            </div>
+            <div id="mensajes-list" class="item-list"></div>
+        </div>
+
+        <!-- Tab Logros -->
+        <div id="tab-logros" class="tab-content hidden">
+            <div class="list-header">
+                <h3>Logros <span id="count-logros" class="badge-count">0</span></h3>
+                <button id="btn-add-logro" class="btn btn-primary btn-sm">
+                    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Añadir Logro
+                </button>
+            </div>
+            <div id="logros-list" class="item-list"></div>
+        </div>
+    </main>
+</div>
+
+<!-- MODALS -->
+
+<!-- Modal Formulario Mensaje -->
+<div id="modal-mensaje" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modal-mensaje-title">Añadir Mensaje</h3>
+            <button class="btn-close-modal btn-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <form id="form-mensaje">
+            <input type="hidden" id="msg-original-id">
+            <input type="hidden" id="msg-original-type">
+            
+            <div class="form-group">
+                <label for="msg-id">ID (Clave Única)</label>
+                <input type="text" id="msg-id" required placeholder="Ej: Dia de San Valentin">
+                <div id="msg-id-hint" class="form-hint">ID Normalizado: <span id="msg-id-preview"></span></div>
+            </div>
+
+            <div class="form-group">
+                <label for="msg-type">Tipo de Contenido</label>
+                <select id="msg-type" required>
+                    <option value="text">Texto (Carta)</option>
+                    <option value="video">Video (YouTube)</option>
+                    <option value="image">Imagen</option>
+                    <option value="audio">Audio</option>
+                    <option value="download">Descarga (Protegido)</option>
+                    <option value="image_audio">Imagen + Audio</option>
+                    <option value="link">Enlace Externo</option>
+                    <option value="internal">Archivo Interno (Iframe)</option>
+                </select>
+            </div>
+
+            <div class="form-group hidden">
+                <label for="msg-categoria">Categoría</label>
+                <input type="text" id="msg-categoria" placeholder="Ej: Carta, Foto, Regalo">
+                <div class="form-hint">Etiqueta descriptiva para agrupar contenido</div>
+            </div>
+
+            <div class="form-group">
+                <label for="msg-pista">Pista (Obligatorio)</label>
+                <input type="text" id="msg-pista" required placeholder="Texto de pista para el usuario">
+            </div>
+
+            <!-- Campos Dinámicos -->
+            <div id="dynamic-fields">
+                <div class="form-group dynamic-field" data-for="text video">
+                    <label for="msg-texto">Texto <span class="opt-label">(Opcional en video)</span></label>
+                    <textarea id="msg-texto" placeholder="Escribe el mensaje aquí... Los saltos de línea se respetarán."></textarea>
+                </div>
+
+                <div class="form-group dynamic-field" data-for="video">
+                    <label for="msg-videoEmbed">Enlace de YouTube</label>
+                    <input type="url" id="msg-videoEmbed" placeholder="https://www.youtube.com/watch?v=... o https://youtu.be/...">
+                    <div class="form-hint">Se convertirá automáticamente a formato Embed.</div>
+                </div>
+
+                <div class="form-group dynamic-field" data-for="image image_audio">
+                    <label for="msg-imagen">Nombre del archivo de Imagen</label>
+                    <input type="text" id="msg-imagen" placeholder="ejemplo.jpg">
+                    <div class="form-hint">Ruta automática: assets/unlocked_content/images/</div>
+                </div>
+
+                <div class="form-group dynamic-field" data-for="audio image_audio">
+                    <label for="msg-audio">Nombre del archivo de Audio</label>
+                    <input type="text" id="msg-audio" placeholder="cancion.ogg">
+                    <div class="form-hint">Ruta automática: assets/unlocked_content/audio/</div>
+                </div>
+
+                <div class="form-group dynamic-field" data-for="download">
+                    <label for="msg-descarga">Nombre del archivo para Descarga</label>
+                    <input type="text" id="msg-descarga" placeholder="archivo.wenc">
+                    <div class="form-hint">Ruta automática: assets/unlocked_content/encrypted/</div>
+                </div>
+
+                <div class="form-group dynamic-field" data-for="link">
+                    <label for="msg-link">URL Externa</label>
+                    <input type="url" id="msg-link" placeholder="https://ejemplo.com">
+                </div>
+
+                <div class="form-group dynamic-field" data-for="internal">
+                    <label for="msg-archivo">Ruta del Archivo Interno</label>
+                    <input type="text" id="msg-archivo" placeholder="pages/minijuego.html">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary btn-close-modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar Ítem</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Formulario Logro -->
+<div id="modal-logro" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modal-logro-title">Añadir Logro</h3>
+            <button class="btn-close-modal btn-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <form id="form-logro">
+            <input type="hidden" id="logro-original-id">
+            
+            <div class="form-group">
+                <label for="logro-id">ID del Logro</label>
+                <input type="text" id="logro-id" required placeholder="ej: primer_paso">
+                <div id="logro-id-hint" class="form-hint">ID Normalizado: <span id="logro-id-preview"></span></div>
+            </div>
+
+            <div class="form-group">
+                <label for="logro-codigo">Código Requerido (Número)</label>
+                <input type="number" id="logro-codigo" required min="1" placeholder="Ej: 5">
+            </div>
+
+            <div class="form-group">
+                <label for="logro-mensaje">Mensaje de Desbloqueo</label>
+                <textarea id="logro-mensaje" required placeholder="¡Has encontrado 5 secretos!"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary btn-close-modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar Logro</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Confirmación Genérico -->
+<div id="modal-confirm" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <svg viewBox="0 0 24 24" style="width: 48px; height: 48px; color: var(--warning-color); margin-bottom: 1rem;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        <h3 id="confirm-title" style="margin-bottom: 0.5rem;">¿Estás seguro?</h3>
+        <p id="confirm-msg" style="color: var(--text-secondary); margin-bottom: 2rem;">Esta acción no se puede deshacer.</p>
+        <div class="modal-actions" style="justify-content: center;">
+            <button id="btn-confirm-cancel" class="btn btn-secondary">Cancelar</button>
+            <button id="btn-confirm-ok" class="btn btn-danger">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cambio de Tipo -->
+<div id="modal-type-change" class="modal-overlay">
+    <div class="modal-content" style="max-width: 450px;">
+        <svg viewBox="0 0 24 24" style="width: 48px; height: 48px; color: var(--warning-color); margin-bottom: 1rem;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        <h3 style="margin-bottom: 1rem;">Cambiar Tipo de Contenido</h3>
+        <p id="type-change-msg" style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+            Al cambiar el tipo de contenido, se perderán los datos específicos del tipo actual. 
+            Se conservarán: ID, categoría y pista.
+        </p>
+        <p style="color: var(--warning-color); margin-bottom: 2rem; font-weight: 600;">
+            Campos que se perderán: <span id="type-change-fields"></span>
+        </p>
+        <div class="modal-actions" style="justify-content: center;">
+            <button id="btn-type-change-cancel" class="btn btn-secondary">Cancelar</button>
+            <button id="btn-type-change-ok" class="btn btn-danger">Cambiar Tipo</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Navegación Home -->
+<div id="modal-nav-home" class="modal-overlay">
+    <div class="modal-content" style="max-width: 450px;">
+        <h3 style="margin-bottom: 1rem;">Volver al Inicio</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem;">Si vuelves al inicio perderás los cambios no guardados. ¿Qué deseas hacer?</p>
+        <div class="modal-actions" style="flex-direction: column; gap: 0.5rem; padding-top: 0;">
+            <button id="btn-nav-download" class="btn btn-primary">Descargar Archivo Actual</button>
+            <button id="btn-nav-discard" class="btn btn-danger">Salir sin Guardar</button>
+            <button class="btn btn-secondary btn-close-modal">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Resumen de Importación -->
+<div id="modal-import-errors" class="modal-overlay">
+    <div class="modal-content" style="max-width: 560px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Resumen de Importación</h3>
+            <button class="btn-close-modal btn-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <!-- Stats bar -->
+        <div id="import-stats" style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap;">
+            <span id="import-stat-total"  style="font-weight:600;"></span>
+            <span id="import-stat-ok"     style="color:var(--success-color); font-weight:600;"></span>
+            <span id="import-stat-bad"    style="color:var(--danger-color);  font-weight:600;"></span>
+        </div>
+        <p style="color: var(--text-secondary); margin-bottom: 0.75rem; font-size:0.9rem;">
+            Los ítems rechazados <strong>no se cargaron</strong>. Puedes importarlos como borradores marcados en rojo para corregirlos desde el editor.
+        </p>
+        <!-- Rejected list -->
+        <div id="import-error-list" style="max-height: 260px; overflow-y: auto; background: var(--bg-color); padding: 0.75rem; border-radius: var(--radius); font-family: monospace; font-size: 0.8rem; border: 1px solid var(--border-color);">
+        </div>
+        <div class="modal-actions" style="gap:0.75rem; flex-wrap:wrap;">
+            <button id="btn-force-import" class="btn btn-secondary">
+                <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                Forzar import (crear borradores)
+            </button>
+            <button class="btn btn-primary btn-close-modal">Entendido</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast">Mensaje guardado</div>
+
+<script>
+    /* ====================
+       APP STATE & CONFIG
+       ==================== */
+    const PATHS = {
+        image: "assets/unlocked_content/images/",
+        audio: "assets/unlocked_content/audio/",
+        encrypted: "assets/unlocked_content/encrypted/"
+    };
+
+    const CATEGORIES = {
+        text: "Carta",
+        video: "YouTube",
+        image: "Imagen",
+        audio: "Audio",
+        download: "Protegido",
+        image_audio: "Audio e Imagen",
+        link: "Url",
+        internal: "Iframe"
+    };
+
+    // Valid file extensions for validation
+    const VALID_EXTENSIONS = {
+        image: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+        audio: ['mp3', 'ogg', 'wav', 'flac', 'm4a']
+    };
+
+    let appState = {
+        mensajes: new Map(),
+        logros: []
+    };
+    let hasUnsavedChanges = false;
+    let confirmCallback = null;
+    let typeChangeCallback = null;
+    let searchTimer = null;
+    let currentSearchIndex = -1;
+    let searchResults = [];
+
+    /* ====================
+       UTILITIES
+       ==================== */
+    const normalizeId = (str) => {
+        if (!str) return "";
+        return str.normalize("NFD")
+                  .replace(/[\u0300-\u036f]/g, "") // Remove accents
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]/g, ''); // Remove spaces and special chars
+    };
+
+    const normalizeForSearch = (s) => {
+        return s ? s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
+    };
+
+    const getFilename = (path) => {
+        if (!path) return "";
+        return path.trim().split('/').pop().trim();
+    };
+
+    const getFileExtension = (filename) => {
+        if (!filename) return "";
+        const parts = filename.split('.');
+        return parts.length > 1 ? parts.pop().toLowerCase() : "";
+    };
+
+    const extractYouTubeID = (url) => {
+        if (!url) return null;
+        const trimmed = url.trim();
+
+        // Try URL API first — handles all query-param variations cleanly
+        try {
+            const u = new URL(trimmed.startsWith('http') ? trimmed : 'https://' + trimmed);
+            const host = u.hostname.replace(/^www\./, '');
+
+            if (host === 'youtube.com' || host === 'm.youtube.com') {
+                // /shorts/<id>
+                const shortsMatch = u.pathname.match(/^\/shorts\/([a-zA-Z0-9_-]{11})/);
+                if (shortsMatch) return shortsMatch[1];
+                // /watch?v=<id>  or  /embed/<id>  or  /v/<id>
+                const v = u.searchParams.get('v');
+                if (v && /^[a-zA-Z0-9_-]{11}$/.test(v)) return v;
+                const pathMatch = u.pathname.match(/\/(?:embed|v)\/([a-zA-Z0-9_-]{11})/);
+                if (pathMatch) return pathMatch[1];
+            }
+
+            if (host === 'youtu.be') {
+                const id = u.pathname.slice(1).split('?')[0].trim();
+                if (/^[a-zA-Z0-9_-]{11}$/.test(id)) return id;
+            }
+        } catch (_) { /* fall through to regex */ }
+
+        // Regex fallback for malformed URLs
+        const patterns = [
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+            /[?&]v=([a-zA-Z0-9_-]{11})/
+        ];
+        for (const pattern of patterns) {
+            const match = trimmed.match(pattern);
+            if (match && match[1]) return match[1];
+        }
+        return null;
+    };
+
+    const toEmbedUrl = (id) => {
+        return id ? `https://www.youtube.com/embed/${id}` : "";
+    };
+
+    const showToast = (message, type = 'success') => {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = `toast show ${type}`;
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    };
+
+    const setUnsavedChanges = (val) => {
+        hasUnsavedChanges = val;
+        if(val) saveToLocal();
+    };
+
+    /* ====================
+       VALIDATION
+       ==================== */
+    const validateMessage = (type, data) => {
+        const errors = [];
+
+        // Basic validation
+        if (!data.pista || !data.pista.trim()) {
+            errors.push("La pista es obligatoria");
+        }
+
+        // Type-specific validation
+        switch(type) {
+            case 'text':
+                if (!data.texto || !data.texto.trim()) {
+                    errors.push("El texto es obligatorio para tipo 'Texto'");
+                }
+                break;
+
+            case 'image':
+                if (!data.imagen) {
+                    errors.push("El nombre de archivo de imagen es obligatorio");
+                } else {
+                    const ext = getFileExtension(getFilename(data.imagen));
+                    if (!VALID_EXTENSIONS.image.includes(ext)) {
+                        errors.push(`Extensión de imagen inválida. Use: ${VALID_EXTENSIONS.image.join(', ')}`);
+                    }
+                }
+                break;
+
+            case 'audio':
+                if (!data.audio) {
+                    errors.push("El nombre de archivo de audio es obligatorio");
+                } else {
+                    const ext = getFileExtension(getFilename(data.audio));
+                    if (!VALID_EXTENSIONS.audio.includes(ext)) {
+                        errors.push(`Extensión de audio inválida. Use: ${VALID_EXTENSIONS.audio.join(', ')}`);
+                    }
+                }
+                break;
+
+            case 'image_audio':
+                if (!data.imagen) {
+                    errors.push("El nombre de archivo de imagen es obligatorio");
+                } else {
+                    const imgExt = getFileExtension(getFilename(data.imagen));
+                    if (!VALID_EXTENSIONS.image.includes(imgExt)) {
+                        errors.push(`Extensión de imagen inválida. Use: ${VALID_EXTENSIONS.image.join(', ')}`);
+                    }
+                }
+                if (!data.audio) {
+                    errors.push("El nombre de archivo de audio es obligatorio");
+                } else {
+                    const audExt = getFileExtension(getFilename(data.audio));
+                    if (!VALID_EXTENSIONS.audio.includes(audExt)) {
+                        errors.push(`Extensión de audio inválida. Use: ${VALID_EXTENSIONS.audio.join(', ')}`);
+                    }
+                }
+                break;
+
+            case 'video':
+                if (!data.videoEmbed) {
+                    errors.push("El enlace de YouTube es obligatorio");
+                } else {
+                    const id = extractYouTubeID(data.videoEmbed);
+                    if (!id) {
+                        errors.push("Enlace de YouTube no válido");
+                    }
+                }
+                break;
+
+            case 'download':
+                if (!data.descarga || !data.descarga.nombre) {
+                    errors.push("El nombre de archivo para descarga es obligatorio");
+                }
+                break;
+
+            case 'link':
+                if (!data.link || !data.link.trim()) {
+                    errors.push("La URL externa es obligatoria");
+                } else if (!/^https?:\/\/.+/.test(data.link.trim())) {
+                    errors.push("La URL debe comenzar con http:// o https://");
+                }
+                break;
+
+            case 'internal':
+                if (!data.archivo || !data.archivo.trim()) {
+                    errors.push("La ruta del archivo interno es obligatoria");
+                }
+                break;
+        }
+
+        return errors;
+    };
+
+    /* ====================
+       LOCAL STORAGE
+       ==================== */
+    const saveToLocal = () => {
+        const stateToSave = {
+            mensajes: Object.fromEntries(appState.mensajes),
+            logros: appState.logros
+        };
+        localStorage.setItem('lumenState', JSON.stringify(stateToSave));
+    };
+
+    const loadFromLocal = () => {
+        const data = localStorage.getItem('lumenState');
+        if (data) {
+            try {
+                const parsed = JSON.parse(data);
+                appState = {
+                    mensajes: new Map(Object.entries(parsed.mensajes || {})),
+                    logros: parsed.logros || []
+                };
+                renderApp();
+                switchView('editor');
+                return true;
+            } catch (e) {
+                console.error("Error al cargar localStorage", e);
+            }
+        }
+        return false;
+    };
+
+    /* ====================
+       SEARCH FUNCTIONALITY
+       ==================== */
+    const performSearch = (query) => {
+        const qn = normalizeForSearch(query);
+        if (!qn) {
+            hideSearchResults();
+            return;
+        }
+
+        const results = [];
+        for (const [id, msg] of appState.mensajes) {
+            const raw = normalizeForSearch(msg.rawName || id);
+            const idNorm = normalizeForSearch(id);
+            const cat = normalizeForSearch(msg.categoria || '');
+            const pista = normalizeForSearch(msg.pista || '');
+            const text = normalizeForSearch(msg.texto || '');
+
+            if (raw.includes(qn) || idNorm.includes(qn) || cat.includes(qn) || pista.includes(qn) || text.includes(qn)) {
+                results.push({ id, msg });
+            }
+        }
+
+        // Sort by relevance
+        results.sort((a, b) => {
+            const ar = normalizeForSearch(a.msg.rawName || a.id);
+            const br = normalizeForSearch(b.msg.rawName || b.id);
+            
+            // Exact match first
+            if (ar === qn && br !== qn) return -1;
+            if (br === qn && ar !== qn) return 1;
+            
+            // Starts with
+            const aStarts = ar.startsWith(qn) ? 0 : 1;
+            const bStarts = br.startsWith(qn) ? 0 : 1;
+            if (aStarts !== bStarts) return aStarts - bStarts;
+            
+            // Alphabetical
+            return ar.localeCompare(br);
+        });
+
+        searchResults = results;
+        currentSearchIndex = -1;
+        displaySearchResults(results.slice(0, 30), results.length);
+    };
+
+    const displaySearchResults = (results, total) => {
+        const container = document.getElementById('search-results');
+        
+        if (results.length === 0) {
+            container.innerHTML = '<div class="search-empty">No se encontraron resultados</div>';
+            container.classList.remove('hidden');
+            return;
+        }
+
+        let html = `<div class="search-count">Mostrando ${results.length} de ${total} resultado${total !== 1 ? 's' : ''}${total > 30 ? `<button class="search-count-link" onclick="document.getElementById('search-input').dispatchEvent(new Event('showall'))">Ver todos (${total})</button>` : ''}</div>`;
+        
+        results.forEach((result, index) => {
+            const { id, msg } = result;
+            const displayName = msg.rawName || id;
+            html += `
+                <div class="search-result-item" data-index="${index}" data-id="${id}">
+                    <div class="search-result-info">
+                        <div class="search-result-name">${displayName}</div>
+                        <div class="search-result-meta">#${id} • ${msg.categoria || msg.type}</div>
+                    </div>
+                    <span class="search-result-badge">${msg.type}</span>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        container.classList.remove('hidden');
+
+        // Attach click handlers
+        container.querySelectorAll('.search-result-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const id = item.dataset.id;
+                openMessageEditor(id);
+                hideSearchResults();
+                document.getElementById('search-input').value = '';
+            });
+        });
+    };
+
+    const hideSearchResults = () => {
+        document.getElementById('search-results').classList.add('hidden');
+        searchResults = [];
+        currentSearchIndex = -1;
+    };
+
+    const openMessageEditor = (id) => {
+        const item = appState.mensajes.get(id);
+        if (!item) return;
+        
+        // Switch to mensajes tab
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        document.querySelector('.tab[data-tab="mensajes"]').classList.add('active');
+        document.getElementById('tab-mensajes').classList.remove('hidden');
+        
+        // Open editor
+        document.getElementById('modal-mensaje-title').textContent = "Editar Mensaje";
+        document.getElementById('msg-original-id').value = id;
+        document.getElementById('msg-original-type').value = item.type;
+        document.getElementById('msg-id').value = item.rawName || id;
+        document.getElementById('msg-id-preview').textContent = id;
+        document.getElementById('msg-type').value = item.type;
+        document.getElementById('msg-categoria').value = item.categoria || CATEGORIES[item.type];
+        document.getElementById('msg-pista').value = item.pista;
+        
+        // Load type-specific fields
+        document.getElementById('msg-texto').value = item.texto || "";
+        document.getElementById('msg-videoEmbed').value = item.videoEmbed || "";
+        document.getElementById('msg-imagen').value = getFilename(item.imagen);
+        document.getElementById('msg-audio').value = getFilename(item.audio);
+        document.getElementById('msg-link').value = item.link || "";
+        document.getElementById('msg-archivo').value = item.archivo || "";
+        
+        if (item.type === 'download' && item.descarga) {
+            document.getElementById('msg-descarga').value = item.descarga.nombre || getFilename(item.descarga.url);
+        } else {
+            document.getElementById('msg-descarga').value = "";
+        }
+
+        updateDynamicFields();
+        openModal(modalMensaje);
+    };
+
+    // Search input handling
+    document.getElementById('search-input').addEventListener('input', (e) => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => performSearch(e.target.value), 250);
+    });
+
+    // Keyboard navigation for search
+    document.getElementById('search-input').addEventListener('keydown', (e) => {
+        const resultsContainer = document.getElementById('search-results');
+        if (resultsContainer.classList.contains('hidden')) return;
+
+        const items = resultsContainer.querySelectorAll('.search-result-item');
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            currentSearchIndex = Math.min(currentSearchIndex + 1, items.length - 1);
+            updateSearchHighlight(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            currentSearchIndex = Math.max(currentSearchIndex - 1, -1);
+            updateSearchHighlight(items);
+        } else if (e.key === 'Enter' && currentSearchIndex >= 0) {
+            e.preventDefault();
+            items[currentSearchIndex].click();
+        } else if (e.key === 'Escape') {
+            hideSearchResults();
+            e.target.blur();
+        }
+    });
+
+    const updateSearchHighlight = (items) => {
+        items.forEach((item, index) => {
+            if (index === currentSearchIndex) {
+                item.classList.add('active');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    };
+
+    // Close search results when clicking outside
+    document.addEventListener('click', (e) => {
+        const searchContainer = document.getElementById('search-container');
+        if (!searchContainer.contains(e.target)) {
+            hideSearchResults();
+        }
+    });
+
+    // Show all search results when "Ver todos" is clicked
+    document.getElementById('search-input').addEventListener('showall', () => {
+        if (searchResults.length > 0) {
+            displaySearchResults(searchResults, searchResults.length);
+        }
+    });
+
+    // Keyboard shortcut Ctrl+K / Cmd+K
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            const searchInput = document.getElementById('search-input');
+            if (!searchInput.closest('.hidden')) {
+                searchInput.focus();
+                searchInput.select();
+            }
+        }
+    });
+
+    /* ====================
+       DOM ELEMENTS
+       ==================== */
+    // Views
+    const viewLanding = document.getElementById('view-landing');
+    const viewEditor = document.getElementById('view-editor');
+    const editorActions = document.getElementById('editor-actions');
+    const searchContainer = document.getElementById('search-container');
+    
+    // Lists
+    const mensajesList = document.getElementById('mensajes-list');
+    const logrosList = document.getElementById('logros-list');
+    
+    // Counters
+    const countMensajes = document.getElementById('count-mensajes');
+    const countLogros = document.getElementById('count-logros');
+    
+    // Forms
+    const formMensaje = document.getElementById('form-mensaje');
+    const formLogro = document.getElementById('form-logro');
+    const typeSelect = document.getElementById('msg-type');
+    
+    // Modals
+    const modalMensaje = document.getElementById('modal-mensaje');
+    const modalLogro = document.getElementById('modal-logro');
+    const modalConfirm = document.getElementById('modal-confirm');
+    const modalTypeChange = document.getElementById('modal-type-change');
+    const modalNavHome = document.getElementById('modal-nav-home');
+    const modalImportErrors = document.getElementById('modal-import-errors');
+
+    /* ====================
+       UI LOGIC & NAVIGATION
+       ==================== */
+    const switchView = (view) => {
+        if (view === 'landing') {
+            viewLanding.classList.remove('hidden');
+            viewEditor.classList.add('hidden');
+            editorActions.classList.add('hidden');
+            searchContainer.classList.add('hidden');
+        } else {
+            viewLanding.classList.add('hidden');
+            viewEditor.classList.remove('hidden');
+            editorActions.classList.remove('hidden');
+            searchContainer.classList.remove('hidden');
+            renderApp();
+        }
+    };
+
+    // Theme Toggle
+    const toggleTheme = () => {
+        const html = document.documentElement;
+        const currentTheme = html.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', newTheme);
+        
+        document.getElementById('icon-moon').classList.toggle('hidden');
+        document.getElementById('icon-sun').classList.toggle('hidden');
+    };
+    document.getElementById('btn-theme-toggle').addEventListener('click', toggleTheme);
+
+    // Tabs logic
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            
+            e.target.classList.add('active');
+            document.getElementById(`tab-${e.target.dataset.tab}`).classList.remove('hidden');
+        });
+    });
+
+    // Dynamic Fields Logic
+    const getFieldsForType = (type) => {
+        const fields = [];
+        switch(type) {
+            case 'text':
+                fields.push('texto');
+                break;
+            case 'video':
+                fields.push('videoEmbed', 'texto');
+                break;
+            case 'image':
+                fields.push('imagen');
+                break;
+            case 'audio':
+                fields.push('audio');
+                break;
+            case 'image_audio':
+                fields.push('imagen', 'audio');
+                break;
+            case 'download':
+                fields.push('descarga');
+                break;
+            case 'link':
+                fields.push('link');
+                break;
+            case 'internal':
+                fields.push('archivo');
+                break;
+        }
+        return fields;
+    };
+
+    const hasDataInDynamicFields = () => {
+        const currentType = document.getElementById('msg-original-type').value;
+        if (!currentType) return false;
+        
+        const fields = getFieldsForType(currentType);
+        for (const field of fields) {
+            const input = document.getElementById(`msg-${field}`);
+            if (input && input.value.trim()) return true;
+        }
+        return false;
+    };
+
+    const updateDynamicFields = () => {
+        const type = typeSelect.value;
+        document.querySelectorAll('.dynamic-field').forEach(field => {
+            const types = field.dataset.for.split(' ');
+            if (types.includes(type)) {
+                field.classList.remove('hidden');
+                const inputs = field.querySelectorAll('input, textarea');
+                inputs.forEach(input => {
+                    if (input.id === 'msg-texto' && type === 'video') {
+                        input.removeAttribute('required');
+                    } else {
+                        input.setAttribute('required', 'true');
+                    }
+                });
+            } else {
+                field.classList.add('hidden');
+                field.querySelectorAll('input, textarea').forEach(input => {
+                    input.removeAttribute('required');
+                });
+            }
+        });
+    };
+
+    typeSelect.addEventListener('change', () => {
+        const originalType = document.getElementById('msg-original-type').value;
+        const newType = typeSelect.value;
+        
+        // If editing existing item and type changed and has data
+        if (originalType && originalType !== newType && hasDataInDynamicFields()) {
+            // Show confirmation modal
+            const fieldsToLose = getFieldsForType(originalType).join(', ');
+            document.getElementById('type-change-fields').textContent = fieldsToLose;
+            
+            typeChangeCallback = () => {
+                // Clear dynamic fields
+                getFieldsForType(originalType).forEach(field => {
+                    const input = document.getElementById(`msg-${field}`);
+                    if (input) input.value = '';
+                });
+                document.getElementById('msg-original-type').value = newType;
+                updateDynamicFields();
+                closeModal(modalTypeChange);
+            };
+            
+            openModal(modalTypeChange);
+        } else {
+            document.getElementById('msg-original-type').value = newType;
+            updateDynamicFields();
+        }
+    });
+
+    document.getElementById('btn-type-change-ok').addEventListener('click', () => {
+        if (typeChangeCallback) typeChangeCallback();
+    });
+
+    document.getElementById('btn-type-change-cancel').addEventListener('click', () => {
+        // Revert to original type
+        const originalType = document.getElementById('msg-original-type').value;
+        typeSelect.value = originalType;
+        closeModal(modalTypeChange);
+    });
+
+    // Modals Control
+    const openModal = (modal) => modal.classList.add('active');
+    const closeModal = (modal) => {
+        modal.classList.remove('active');
+        if(modal === modalMensaje) {
+            formMensaje.reset();
+            document.getElementById('msg-original-type').value = '';
+        }
+        if(modal === modalLogro) formLogro.reset();
+    };
+
+    document.querySelectorAll('.btn-close-modal').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            closeModal(e.target.closest('.modal-overlay'));
+        });
+    });
+
+    // Real-time ID normalization feedback
+    const setupNormalizer = (inputId, previewId, hintId, collectionGetter) => {
+        const input = document.getElementById(inputId);
+        const preview = document.getElementById(previewId);
+        const hint = document.getElementById(hintId);
+
+        input.addEventListener('input', (e) => {
+            const norm = normalizeId(e.target.value);
+            preview.textContent = norm;
+            
+            const originalId = document.getElementById(inputId.includes('msg') ? 'msg-original-id' : 'logro-original-id').value;
+            const collection = collectionGetter();
+            
+            if (norm.length === 0) {
+                hint.className = 'form-hint';
+                input.setCustomValidity('');
+            } else if (collection.includes(norm) && norm !== originalId) {
+                hint.className = 'form-hint error';
+                preview.textContent = norm + ' (¡Ya existe!)';
+                input.setCustomValidity('El ID ya existe');
+            } else {
+                hint.className = 'form-hint success';
+                input.setCustomValidity('');
+            }
+        });
+    };
+    
+    setupNormalizer('msg-id', 'msg-id-preview', 'msg-id-hint', () => Array.from(appState.mensajes.keys()));
+    setupNormalizer('logro-id', 'logro-id-preview', 'logro-id-hint', () => appState.logros.map(l => l.id));
+
+    /* ====================
+       RENDER LOGIC
+       ==================== */
+    const renderApp = () => {
+        // Update counters
+        countMensajes.textContent = appState.mensajes.size;
+        countLogros.textContent = appState.logros.length;
+
+        // Count and show invalid badge
+        const invalidCount = [...appState.mensajes.values()].filter(m => m.__invalid).length;
+        const invalidBadge = document.getElementById('count-invalid');
+        if (invalidCount > 0) {
+            invalidBadge.textContent = `${invalidCount} inválido${invalidCount > 1 ? 's' : ''}`;
+            invalidBadge.classList.remove('hidden');
+        } else {
+            invalidBadge.classList.add('hidden');
+        }
+
+        // Render Mensajes
+        mensajesList.innerHTML = '';
+        
+        if (appState.mensajes.size === 0) {
+            mensajesList.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;">No hay mensajes. ¡Añade el primero!</div>`;
+        } else {
+            for (const [key, item] of appState.mensajes) {
+                const displayName = item.rawName || key;
+                const isInvalid = Array.isArray(item.__invalid) && item.__invalid.length > 0;
+                const card = document.createElement('div');
+                card.className = isInvalid ? 'card card-invalid' : 'card';
+                const invalidBadgeHtml = isInvalid
+                    ? `<span class="badge-invalid" title="${item.__invalid.join('; ')}">BORRADOR INVÁLIDO</span>`
+                    : '';
+                const invalidHint = isInvalid
+                    ? `<div style="color:var(--danger-color); font-size:0.8rem; margin-top:0.25rem;"><strong>Errores:</strong> ${item.__invalid.join(' | ')}</div>`
+                    : '';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="card-title">${displayName}${invalidBadgeHtml}</span>
+                        <span class="card-badge">${item.categoria || item.type}</span>
+                    </div>
+                    <div class="card-body">
+                        <strong>Pista:</strong> ${item.pista || '—'}<br>
+                        ${item.texto ? `<small>Texto: ${item.texto.substring(0,40)}...</small>` : ''}
+                        ${invalidHint}
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-icon btn-edit-msg" data-id="${key}" title="Editar">
+                            <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
+                        <button class="btn-icon btn-del-msg" data-id="${key}" title="Eliminar" style="color: var(--danger-color);">
+                            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                `;
+                mensajesList.appendChild(card);
+            }
+        }
+
+        // Render Logros
+        logrosList.innerHTML = '';
+        if (appState.logros.length === 0) {
+            logrosList.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;">No hay logros definidos.</div>`;
+        } else {
+            appState.logros.sort((a,b) => a.codigo_requerido - b.codigo_requerido).forEach(logro => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="card-title">${logro.id}</span>
+                        <span class="card-badge" style="background:var(--success-color)">Req: ${logro.codigo_requerido}</span>
+                    </div>
+                    <div class="card-body">
+                        ${logro.mensaje}
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-icon btn-edit-logro" data-id="${logro.id}" title="Editar">
+                            <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
+                        <button class="btn-icon btn-del-logro" data-id="${logro.id}" title="Eliminar" style="color: var(--danger-color);">
+                            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                `;
+                logrosList.appendChild(card);
+            });
+        }
+
+        attachListEvents();
+    };
+
+    const attachListEvents = () => {
+        // Edit Message
+        document.querySelectorAll('.btn-edit-msg').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = e.currentTarget.dataset.id;
+                openMessageEditor(id);
+            });
+        });
+
+        // Delete Message
+        document.querySelectorAll('.btn-del-msg').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = e.currentTarget.dataset.id;
+                confirmAction("¿Eliminar este mensaje?", `El ID '${id}' se borrará de forma permanente.`, () => {
+                    appState.mensajes.delete(id);
+                    setUnsavedChanges(true);
+                    renderApp();
+                    showToast("Mensaje eliminado", "success");
+                });
+            });
+        });
+
+        // Edit Logro
+        document.querySelectorAll('.btn-edit-logro').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = e.currentTarget.dataset.id;
+                const logro = appState.logros.find(l => l.id === id);
+                
+                document.getElementById('modal-logro-title').textContent = "Editar Logro";
+                document.getElementById('logro-original-id').value = id;
+                document.getElementById('logro-id').value = id;
+                document.getElementById('logro-id-preview').textContent = id;
+                document.getElementById('logro-codigo').value = logro.codigo_requerido;
+                document.getElementById('logro-mensaje').value = logro.mensaje;
+                
+                openModal(modalLogro);
+            });
+        });
+
+        // Delete Logro
+        document.querySelectorAll('.btn-del-logro').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = e.currentTarget.dataset.id;
+                confirmAction("¿Eliminar este logro?", `El logro '${id}' se borrará de forma permanente.`, () => {
+                    appState.logros = appState.logros.filter(l => l.id !== id);
+                    setUnsavedChanges(true);
+                    renderApp();
+                    showToast("Logro eliminado", "success");
+                });
+            });
+        });
+    };
+
+    const confirmAction = (title, message, onConfirm) => {
+        document.getElementById('confirm-title').textContent = title;
+        document.getElementById('confirm-msg').textContent = message;
+        confirmCallback = onConfirm;
+        openModal(modalConfirm);
+    };
+
+    document.getElementById('btn-confirm-ok').addEventListener('click', () => {
+        if(confirmCallback) confirmCallback();
+        closeModal(modalConfirm);
+    });
+    document.getElementById('btn-confirm-cancel').addEventListener('click', () => {
+        closeModal(modalConfirm);
+    });
+
+    /* ====================
+       FORM SUBMISSIONS
+       ==================== */
+    // Add Buttons
+    document.getElementById('btn-add-mensaje').addEventListener('click', () => {
+        formMensaje.reset();
+        document.getElementById('msg-original-id').value = "";
+        document.getElementById('msg-original-type').value = "";
+        document.getElementById('modal-mensaje-title').textContent = "Añadir Mensaje";
+        document.getElementById('msg-id-preview').textContent = "";
+        document.getElementById('msg-id-hint').className = "form-hint";
+        updateDynamicFields();
+        openModal(modalMensaje);
+    });
+
+    document.getElementById('btn-add-logro').addEventListener('click', () => {
+        formLogro.reset();
+        document.getElementById('logro-original-id').value = "";
+        document.getElementById('modal-logro-title').textContent = "Añadir Logro";
+        document.getElementById('logro-id-preview').textContent = "";
+        document.getElementById('logro-id-hint').className = "form-hint";
+        openModal(modalLogro);
+    });
+
+    // Save Mensaje
+    formMensaje.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const rawId = document.getElementById('msg-id').value;
+        const normalizedId = normalizeId(rawId);
+        const originalId = document.getElementById('msg-original-id').value;
+        const type = typeSelect.value;
+        
+        if (!normalizedId) {
+            return showToast("Nombre inválido", "error");
+        }
+
+        // Check for duplicate IDs
+        if (appState.mensajes.has(normalizedId) && normalizedId !== originalId) {
+            return showToast("Ya existe un recuerdo con ese nombre (ID duplicado). Cambia el nombre.", "error");
+        }
+
+        // Build object
+        let newItem = {
+            type: type,
+            categoria: CATEGORIES[type],
+            pista: document.getElementById('msg-pista').value.trim(),
+            rawName: rawId.trim()
+        };
+
+        // Process by type
+        if (['text', 'video'].includes(type)) {
+            const txt = document.getElementById('msg-texto').value;
+            if(txt) newItem.texto = txt;
+        }
+        
+        if (type === 'video') {
+            const videoUrl = document.getElementById('msg-videoEmbed').value;
+            const videoId = extractYouTubeID(videoUrl);
+            if (!videoId) {
+                return showToast("Enlace de YouTube no válido.", "error");
+            }
+            newItem.videoEmbed = toEmbedUrl(videoId);
+        }
+
+        if (['image', 'image_audio'].includes(type)) {
+            newItem.imagen = PATHS.image + getFilename(document.getElementById('msg-imagen').value);
+        }
+
+        if (['audio', 'image_audio'].includes(type)) {
+            newItem.audio = PATHS.audio + getFilename(document.getElementById('msg-audio').value);
+        }
+
+        if (type === 'download') {
+            const filename = getFilename(document.getElementById('msg-descarga').value);
+            newItem.descarga = {
+                url: PATHS.encrypted + filename,
+                nombre: filename
+            };
+        }
+
+        if (type === 'link') newItem.link = document.getElementById('msg-link').value;
+        if (type === 'internal') newItem.archivo = document.getElementById('msg-archivo').value;
+
+        // Validate before saving
+        const errors = validateMessage(type, newItem);
+        if (errors.length > 0) {
+            return showToast(errors[0], "error");
+        }
+
+        // Delete old ID if renamed
+        if (originalId && originalId !== normalizedId) {
+            appState.mensajes.delete(originalId);
+        }
+
+        appState.mensajes.set(normalizedId, newItem);
+        // newItem is freshly built and validated — always clear any prior __invalid flag
+        delete newItem.__invalid;
+        
+        setUnsavedChanges(true);
+        renderApp();
+        closeModal(modalMensaje);
+        showToast("Mensaje guardado correctamente");
+    });
+
+    // Save Logro
+    formLogro.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const rawId = document.getElementById('logro-id').value;
+        const normalizedId = normalizeId(rawId);
+        const originalId = document.getElementById('logro-original-id').value;
+        
+        if (!normalizedId) return showToast("El ID no puede estar vacío tras normalizar", "error");
+
+        // Check for duplicate IDs
+        const existingIds = appState.logros.map(l => l.id);
+        if (existingIds.includes(normalizedId) && normalizedId !== originalId) {
+            return showToast("Ya existe un logro con ese ID. Cambia el nombre.", "error");
+        }
+
+        const newLogro = {
+            id: normalizedId,
+            codigo_requerido: parseInt(document.getElementById('logro-codigo').value, 10),
+            mensaje: document.getElementById('logro-mensaje').value.trim()
+        };
+
+        // Update or add
+        if (originalId) {
+            const index = appState.logros.findIndex(l => l.id === originalId);
+            if (index > -1) {
+                appState.logros[index] = newLogro;
+            }
+        } else {
+            appState.logros.push(newLogro);
+        }
+
+        setUnsavedChanges(true);
+        renderApp();
+        closeModal(modalLogro);
+        showToast("Logro guardado correctamente");
+    });
+
+    /* ====================
+       FILE I/O
+       ==================== */
+    // Create new
+    document.getElementById('btn-create-new').addEventListener('click', () => {
+        appState = { mensajes: new Map(), logros: [] };
+        setUnsavedChanges(true);
+        switchView('editor');
+    });
+
+    // Load Existing
+    let _pendingForceJson = null; // holds original json for force-import
+
+    document.getElementById('file-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const json = JSON.parse(event.target.result);
+                
+                // Validate basic structure
+                if (!json.mensajes && !json.logros) {
+                    throw new Error("Estructura JSON no reconocida");
+                }
+                
+                const rejected = [];      // { id, errs[] }
+                const validMensajes = new Map();
+                
+                // Validate and import mensajes
+                if (json.mensajes && typeof json.mensajes === 'object') {
+                    for (const [id, msg] of Object.entries(json.mensajes)) {
+                        // Round-trip: convert literal \n back to real newlines for editing
+                        if (typeof msg.texto === 'string') {
+                            msg.texto = msg.texto.replace(/\\n/g, '\n');
+                        }
+                        const errs = validateMessage(msg.type, msg);
+                        if (errs.length > 0) {
+                            rejected.push({ id, errs });
+                        } else {
+                            validMensajes.set(id, msg);
+                        }
+                    }
+                }
+                
+                appState = {
+                    mensajes: validMensajes,
+                    logros: Array.isArray(json.logros) ? json.logros : []
+                };
+                
+                setUnsavedChanges(false);
+                saveToLocal();
+                switchView('editor');
+                
+                if (rejected.length > 0) {
+                    _pendingForceJson = json; // save for force-import
+                    showImportSummary(validMensajes.size, rejected, Object.keys(json.mensajes || {}).length);
+                } else {
+                    showToast(`Archivo cargado: ${validMensajes.size} mensajes, ${appState.logros.length} logros`, "success");
+                }
+            } catch (err) {
+                showToast("Error al leer el archivo JSON: " + err.message, "error");
+            }
+            e.target.value = ''; // Reset input
+        };
+        reader.readAsText(file);
+    });
+
+    const showImportSummary = (accepted, rejected, total) => {
+        document.getElementById('import-stat-total').textContent = `${total} procesados`;
+        document.getElementById('import-stat-ok').textContent = `${accepted} aceptados`;
+        document.getElementById('import-stat-bad').textContent = `${rejected.length} rechazados`;
+        document.getElementById('btn-force-import').classList.remove('hidden');
+
+        const MAX_SHOWN = 100;
+        const shown = rejected.slice(0, MAX_SHOWN);
+        const extra = rejected.length - shown.length;
+        let html = shown.map(r =>
+            `<div class="import-error-row"><span class="import-error-id">${r.id}</span>: ${r.errs.join(' | ')}</div>`
+        ).join('');
+        if (extra > 0) html += `<div style="color:var(--text-secondary); padding-top:0.3rem;">… y ${extra} más</div>`;
+        document.getElementById('import-error-list').innerHTML = html;
+
+        openModal(modalImportErrors);
+    };
+
+    const forceImport = () => {
+        if (!_pendingForceJson) return;
+        const json = _pendingForceJson;
+        const allMensajes = new Map();
+
+        if (json.mensajes && typeof json.mensajes === 'object') {
+            for (const [id, msg] of Object.entries(json.mensajes)) {
+                // Round-trip: convert literal \n back to real newlines
+                if (typeof msg.texto === 'string') {
+                    msg.texto = msg.texto.replace(/\\n/g, '\n');
+                }
+                const errs = validateMessage(msg.type, msg);
+                if (errs.length > 0) {
+                    msg.__invalid = errs; // mark as invalid draft
+                }
+                allMensajes.set(id, msg);
+            }
+        }
+
+        appState = {
+            mensajes: allMensajes,
+            logros: Array.isArray(json.logros) ? json.logros : []
+        };
+
+        _pendingForceJson = null;
+        setUnsavedChanges(true);
+        renderApp();
+        closeModal(modalImportErrors);
+        const invalidCount = [...allMensajes.values()].filter(m => m.__invalid).length;
+        showToast(`Import forzado: ${allMensajes.size} mensajes (${invalidCount} borradores inválidos marcados en rojo)`, "warning");
+    };
+
+    document.getElementById('btn-force-import').addEventListener('click', forceImport);
+
+    // Download/Export
+    const executeDownload = () => {
+        // Validate: no draft open
+        const modalOpen = modalMensaje.classList.contains('active') || modalLogro.classList.contains('active');
+        if (modalOpen) {
+            return showToast("Cierra el editor actual antes de exportar.", "warning");
+        }
+
+        // Validate: not empty
+        if (appState.mensajes.size === 0 && appState.logros.length === 0) {
+            return showToast("El archivo está vacío. Añade contenido primero.", "error");
+        }
+
+        // Validate all messages
+        const validationErrors = [];
+        let invalidDraftCount = 0;
+        for (const [id, msg] of appState.mensajes) {
+            if (Array.isArray(msg.__invalid) && msg.__invalid.length > 0) {
+                invalidDraftCount++;
+                validationErrors.push(`ID "${id}" (borrador inválido): ${msg.__invalid.join(', ')}`);
+                continue;
+            }
+            const errors = validateMessage(msg.type, msg);
+            if (errors.length > 0) {
+                validationErrors.push(`ID "${id}": ${errors.join(', ')}`);
+            }
+        }
+
+        if (validationErrors.length > 0) {
+            if (invalidDraftCount > 0) {
+                showToast(`Hay ${invalidDraftCount} borrador(es) inválido(s). Corrígelos antes de exportar.`, "error");
+            } else {
+                showToast("Hay errores de validación. No se puede exportar.", "error");
+            }
+            const errorList = document.getElementById('import-error-list');
+            document.getElementById('import-stat-total').textContent = `${appState.mensajes.size} mensajes`;
+            document.getElementById('import-stat-ok').textContent = `${appState.mensajes.size - validationErrors.length} válidos`;
+            document.getElementById('import-stat-bad').textContent = `${validationErrors.length} con errores`;
+            errorList.innerHTML = validationErrors.slice(0,100).map(e =>
+                `<div class="import-error-row">${e}</div>`
+            ).join('');
+            document.getElementById('btn-force-import').classList.add('hidden');
+            openModal(modalImportErrors);
+            return;
+        }
+
+        // Prepare data for export
+        const exportData = {
+            mensajes: {},
+            logros: appState.logros
+        };
+
+        // Process mensajes: remove rawName and escape newlines in texto
+        for (const [id, msg] of appState.mensajes) {
+            const cleanMsg = { ...msg };
+            delete cleanMsg.rawName;    // Don't export rawName
+            delete cleanMsg.__invalid;  // Don't export internal draft flag
+                       
+            exportData.mensajes[id] = cleanMsg;
+        }
+
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "data.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        
+        setUnsavedChanges(false);
+        showToast("Archivo descargado con éxito");
+    };
+    
+    document.getElementById('btn-download').addEventListener('click', executeDownload);
+
+    // Home Navigation
+    document.getElementById('btn-home').addEventListener('click', () => {
+        if (hasUnsavedChanges) {
+            openModal(modalNavHome);
+        } else {
+            switchView('landing');
+        }
+    });
+
+    document.getElementById('btn-nav-download').addEventListener('click', () => {
+        executeDownload();
+        closeModal(modalNavHome);
+        switchView('landing');
+    });
+
+    document.getElementById('btn-nav-discard').addEventListener('click', () => {
+        setUnsavedChanges(false);
+        closeModal(modalNavHome);
+        switchView('landing');
+    });
+
+    /* ====================
+       INITIALIZATION
+       ==================== */
+    const init = () => {
+        // Sanity check: ensure normalizeId is available
+        if (typeof normalizeId !== 'function' || normalizeId('Día 1') !== 'dia1') {
+            console.error('[Lumen] normalizeId() is missing or broken!');
+        }
+        if (!loadFromLocal()) {
+            switchView('landing');
+        }
+    };
+
+    init();
+
+</script>
+</body>
+</html>
