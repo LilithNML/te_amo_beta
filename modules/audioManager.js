@@ -16,34 +16,46 @@ export class AudioManager {
         // Playlist con metadata completa
         this.playlist = [
             {
-                src:    "assets/audio/playlist/Olivia Newton-John - Hopelessly Devoted to You.mp3",
-                cover:  "assets/images/music-cover/hopelessly-devoted.jpg",
-                title:  "Hopelessly Devoted to You",
-                artist: "Olivia Newton-John"
+                src:    "assets/audio/playlist/love-like-you.opus",
+                cover:  "assets/images/music-cover/steven_universe_ost.webp",
+                title:  "Love Like You",
+                artist: "Steven Universe OST"
             },
             {
-                src:    "assets/audio/playlist/Morten Harket - Cant Take My Eyes off You.mp3",
-                cover:  "assets/images/music-cover/cant-take-my-eyes.jpg",
-                title:  "Can't Take My Eyes Off You",
-                artist: "Morten Harket"
+                src:    "assets/audio/playlist/here-comes-a-thought.opus",
+                cover:  "assets/images/music-cover/steven_universe_ost.webp",
+                title:  "Here Comes a Thought",
+                artist: "Steven Universe OST"
             },
             {
-                src:    "assets/audio/playlist/Frank Sinatra - The World We Knew (Over and Over).mp3",
-                cover:  "assets/images/music-cover/the-world-we-knew.jpg",
-                title:  "The World We Knew",
-                artist: "Frank Sinatra"
+                src:    "assets/audio/playlist/luv-u.opus",
+                cover:  "assets/images/music-cover/steven_universe_ost.webp",
+                title:  "Luv u",
+                artist: "Steven Universe OST"
             },
             {
-                src:    "assets/audio/playlist/Frank Sinatra - Strangers In The Night.mp3",
-                cover:  "assets/images/music-cover/strangers-in-the-night.jpg",
-                title:  "Strangers In The Night",
-                artist: "Frank Sinatra"
+                src:    "assets/audio/playlist/do-it-for-her.opus",
+                cover:  "assets/images/music-cover/steven_universe_ost.webp",
+                title:  "Do It for Her",
+                artist: "Steven Universe OST"
             },
             {
-                src:    "assets/audio/playlist/Frank Sinatra - My Way Of Life.mp3",
-                cover:  "assets/images/music-cover/my-way-of-life.jpg",
-                title:  "My Way Of Life",
-                artist: "Frank Sinatra"
+                src:    "assets/audio/playlist/the-cave.opus",
+                cover:  "assets/images/music-cover/steven_universe_ost.webp",
+                title:  "The Cave",
+                artist: "Steven Universe OST"
+            },
+            {
+                src:    "assets/audio/playlist/Its-over-isnt-it.opus",
+                cover:  "assets/images/music-cover/steven_universe_ost.webp",
+                title:  "It's Over, Isn't It",
+                artist: "Steven Universe OST"
+            },
+            {
+                src:    "assets/audio/playlist/dad-museum.opus",
+                cover:  "assets/images/music-cover/steven_universe_ost.webp",
+                title:  "Dad Museum",
+                artist: "Steven Universe OST"
             }
         ];
 
