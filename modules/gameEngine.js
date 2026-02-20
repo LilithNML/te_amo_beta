@@ -2,9 +2,11 @@
  * modules/gameEngine.js
  *
  * Actualizado con Botón de Pistas y correcciones de ID
+ * Actualizado: Iconos SVG en lugar de emojis
  */
 
 import { normalizeText, levenshtein } from './utils.js';
+import { getSVGIcon } from './svgIcons.js';
 
 export class GameEngine {
     constructor(uiManager, audioManager, mensajes, logros) {
@@ -120,7 +122,7 @@ export class GameEngine {
             this.activateResonanceMode();
         }
 
-        this.ui.renderMessage("Código Incorrecto", `Intento ${this.failedAttempts}. ${this.failedAttempts >= 3 ? '💡 Usa el botón de pista para ayuda.' : ''}`);
+        this.ui.renderMessage("Código Incorrecto", `Intento ${this.failedAttempts}. ${this.failedAttempts >= 3 ? `${getSVGIcon('lightBulb')} Usa el botón de pista para ayuda.` : ''}`);
     }
 
     unlockCode(key, isNewDiscovery) {
@@ -182,12 +184,12 @@ export class GameEngine {
     importProgress(data) { 
         // Validación estricta del formato
         if (!data || typeof data !== 'object') {
-            this.ui.showToast("❌ Error: Archivo inválido"); 
+            this.ui.showToast(`${getSVGIcon('error', 'icon-error-color')} Error: Archivo inválido`); 
             return; 
         }
         
         if (!data.unlocked || !Array.isArray(data.unlocked)) { 
-            this.ui.showToast("❌ Error: Archivo incompatible con esta aplicación"); 
+            this.ui.showToast(`${getSVGIcon('error', 'icon-error-color')} Error: Archivo incompatible con esta aplicación`); 
             return; 
         }
         
@@ -269,12 +271,12 @@ export class GameEngine {
                 const favoritesCount = this.favorites.size;
                 
                 this.ui.renderMessage(
-                    "✨ ¡Recuerdos Restaurados!", 
+                    `${getSVGIcon('sparkles')} ¡Recuerdos Restaurados!`, 
                     `<strong>Progreso recuperado con éxito:</strong><br><br>
-                    🔓 ${secretsCount} secretos descubiertos<br>
-                    🏆 ${achievementsCount} logros alcanzados<br>
-                    ❤️ ${favoritesCount} favoritos guardados<br><br>
-                    ¡Bienvenida de vuelta! 💜`
+                    ${getSVGIcon('unlocked')} ${secretsCount} secretos descubiertos<br>
+                    ${getSVGIcon('trophy')} ${achievementsCount} logros alcanzados<br>
+                    ${getSVGIcon('heart')} ${favoritesCount} favoritos guardados<br><br>
+                    ¡Bienvenida de vuelta! ${getSVGIcon('heartPurple', 'icon-purple')}`
                 );
             }, 400);
         }, 300);
@@ -302,7 +304,7 @@ export class GameEngine {
         const lockedCodes = Object.keys(this.mensajes).filter(code => !this.unlocked.has(code));
         
         if (lockedCodes.length === 0) {
-            this.ui.showToast("🎉 ¡Increíble! Has descubierto todos los secretos.");
+            this.ui.showToast(`${getSVGIcon('celebration')} ¡Increíble! Has descubierto todos los secretos.`);
             this.ui.triggerConfetti();
             return;
         }
@@ -313,7 +315,7 @@ export class GameEngine {
         if (!currentInput) {
             targetCode = lockedCodes[Math.floor(Math.random() * lockedCodes.length)];
             const pistaOriginal = this.mensajes[targetCode].pista || "Un secreto especial te espera...";
-            this.ui.renderMessage("🌟 Señal del Universo", `Aquí tienes una señal para un nuevo secreto:<br><br>${pistaOriginal}`);
+            this.ui.renderMessage(`${getSVGIcon('star')} Señal del Universo`, `Aquí tienes una señal para un nuevo secreto:<br><br>${pistaOriginal}`);
             return;
         }
         
@@ -332,20 +334,20 @@ export class GameEngine {
 
         // Nivel 1 (0-2 fallos): Pista original
         if (this.failedAttempts < 3) {
-            this.ui.renderMessage("💡 Pista", pistaOriginal);
+            this.ui.renderMessage(`${getSVGIcon('lightBulb')} Pista`, pistaOriginal);
         } 
         // Nivel 2 (3-4 fallos): Pista + estructura
         else if (this.failedAttempts < 5) {
             const info = `${pistaOriginal}<br><br><strong>Estructura:</strong> Son ${targetCode.length} caracteres y empieza por '${targetCode[0].toUpperCase()}'`;
-            this.ui.renderMessage("💡 Pista Mejorada", info);
+            this.ui.renderMessage(`${getSVGIcon('lightBulb')} Pista Mejorada`, info);
         } 
         // Nivel 3 (5+ fallos): Activar modo resonancia automáticamente
         else {
-            this.ui.showToast("🔥 ¡Modo Radar activado! Mira el color del cuadro mientras escribes...");
+            this.ui.showToast(`${getSVGIcon('fire', 'icon-fire-color')} ¡Modo Radar activado! Mira el color del cuadro mientras escribes...`);
             this.activateResonanceMode();
             
             setTimeout(() => {
-                this.ui.renderMessage("💡 Pista Completa", `${pistaOriginal}<br><br><strong>Estructura:</strong> ${targetCode.length} caracteres, comienza por '${targetCode[0].toUpperCase()}' y termina en '${targetCode[targetCode.length - 1].toUpperCase()}'`);
+                this.ui.renderMessage(`${getSVGIcon('lightBulb')} Pista Completa`, `${pistaOriginal}<br><br><strong>Estructura:</strong> ${targetCode.length} caracteres, comienza por '${targetCode[0].toUpperCase()}' y termina en '${targetCode[targetCode.length - 1].toUpperCase()}'`);
             }, 500);
         }
     }
