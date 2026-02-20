@@ -1061,12 +1061,20 @@ export class UIManager {
         // Contar por categoría
         const categories = {};
         const categoryIcons = {
-            "Carta": "fa-envelope-open-text",
-            "Fotos": "fa-images",
-            "Videos": "fa-video",
-            "Pensamiento": "fa-brain",
-            "Playlist": "fa-music",
-            "Default": "fa-heart"
+            "Susurros":  "fa-feather",
+            "Refugio":   "fa-heart",
+            "Secretos":  "fa-fire",
+            "Melodias":  "fa-music",
+            "Aventuras": "fa-gamepad",
+            "Universos": "fa-clapperboard",
+            "Leyendas":  "fa-trophy",
+            "Enigmas":   "fa-map",
+            "Default":   "fa-heart"
+        };
+
+        const buildIconHTML = (category) => {
+            const icon = categoryIcons[category] || categoryIcons["Default"];
+            return `<i class="fas ${icon}"></i>`;
         };
         
         for (const [code, data] of Object.entries(mensajes)) {
@@ -1083,11 +1091,11 @@ export class UIManager {
         // Renderizar
         let html = "";
         for (const [category, stats] of Object.entries(categories)) {
-            const icon = categoryIcons[category] || categoryIcons["Default"];
+            const iconHTML = buildIconHTML(category);
             const percentage = Math.round((stats.unlocked / stats.total) * 100);
             html += `
                 <div class="category-card">
-                    <div class="category-icon"><i class="fas ${icon}"></i></div>
+                    <div class="category-icon">${iconHTML}</div>
                     <div class="category-name">${category}</div>
                     <div class="category-count">${stats.unlocked}/${stats.total}</div>
                     <div class="category-percentage" style="font-size: 0.8em; color: var(--text-medium); margin-top: 0.3rem;">
