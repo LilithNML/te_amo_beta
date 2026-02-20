@@ -59,7 +59,14 @@ export class UIManager {
             mailboxList: document.getElementById("mailboxList"),
             mailViewer: document.getElementById("mailViewer"),
             mailboxBadge: document.getElementById("mailboxBadge"),
-            menuBadge: document.getElementById("menuBadge")
+            menuBadge: document.getElementById("menuBadge"),
+            // Modal de sincronización QR
+            syncQRModal: document.getElementById("syncQRModal"),
+            closeSyncQRModal: document.getElementById("closeSyncQRModal"),
+            closeSyncQRModalBtn: document.getElementById("closeSyncQRModalBtn"),
+            syncQRImage: document.getElementById("syncQRImage"),
+            syncCopyURL: document.getElementById("syncCopyURL"),
+            menuSyncQR: document.getElementById("menuSyncQR")
         };
 
         this.cachedPassword = null; 
@@ -82,6 +89,7 @@ export class UIManager {
         this.setupBackupSubmenu(); // Configurar submenu de backup
         this.setupReadingMode(); // Configurar modo lectura
         this.setupMailboxModal(); // Configurar modal de buzón
+        this.setupSyncQRModal(); // Configurar modal de sincronización QR
         this.initDynamicPlaceholder();
         this.updateDynamicGreeting(); // Actualizar saludo
         this.checkMailboxNotifications(); // Verificar notificaciones
@@ -843,6 +851,14 @@ export class UIManager {
                 this.closeBackupSubmenu();
             });
         }
+
+        const syncQRBtn = document.getElementById("menuSyncQR");
+        if (syncQRBtn) {
+            syncQRBtn.addEventListener("click", () => {
+                this.closeBackupSubmenu();
+                this.openSyncQRModal();
+            });
+        }
     }
 
     openBackupSubmenu() {
@@ -899,6 +915,106 @@ export class UIManager {
         if(vc===0)this.elements.unlockedList.innerHTML='<p style="text-align:center;width:100%;opacity:0.7">Sin resultados.</p>';
     }
     
+    // ─── Sincronización QR ───────────────────────────────────────────────────
+
+    /**
+     * Empaqueta el estado del localStorage con claves minimizadas y lo comprime
+     * con LZString para generar un token seguro para URL.
+     * @returns {string} Token comprimido listo para ser incluido en una URL
+     */
+    generateSyncToken() {
+        const backup = {
+            u: JSON.parse(localStorage.getItem("desbloqueados") || "[]"),
+            f: JSON.parse(localStorage.getItem("favoritos") || "[]"),
+            l: JSON.parse(localStorage.getItem("logrosAlcanzados") || "[]"),
+            e: JSON.parse(localStorage.getItem("readEmails") || "[]"),
+            s: parseInt(localStorage.getItem("streak") || "0", 10),
+            m: parseInt(localStorage.getItem("minutesOnPage") || "0", 10),
+            t: Date.now()
+        };
+        return LZString.compressToEncodedURIComponent(JSON.stringify(backup));
+    }
+
+    /**
+     * Configura el modal de sincronización QR: eventos de cierre y copiado de URL.
+     */
+    setupSyncQRModal() {
+        const closeModal = () => this.closeSyncQRModal();
+
+        if (this.elements.closeSyncQRModal) {
+            this.elements.closeSyncQRModal.addEventListener("click", closeModal);
+        }
+        if (this.elements.closeSyncQRModalBtn) {
+            this.elements.closeSyncQRModalBtn.addEventListener("click", closeModal);
+        }
+
+        // Cerrar al hacer clic en el overlay (fuera del contenido)
+        if (this.elements.syncQRModal) {
+            this.elements.syncQRModal.addEventListener("click", (e) => {
+                if (e.target === this.elements.syncQRModal) closeModal();
+            });
+        }
+
+        // Botón copiar enlace
+        if (this.elements.syncCopyURL) {
+            this.elements.syncCopyURL.addEventListener("click", () => {
+                const token = this.generateSyncToken();
+                const syncURL = `${window.location.origin}${window.location.pathname}?sync=${token}`;
+                navigator.clipboard.writeText(syncURL)
+                    .then(() => this.showToast(`${getSVGIcon('sparkles')} Enlace copiado al portapapeles`))
+                    .catch(() => {
+                        // Fallback para navegadores sin soporte de clipboard API
+                        const ta = document.createElement('textarea');
+                        ta.value = syncURL;
+                        ta.style.position = 'fixed';
+                        ta.style.opacity = '0';
+                        document.body.appendChild(ta);
+                        ta.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(ta);
+                        this.showToast(`${getSVGIcon('sparkles')} Enlace copiado`);
+                    });
+            });
+        }
+    }
+
+    /**
+     * Genera el token, construye la URL con el QR y muestra el modal.
+     */
+    openSyncQRModal() {
+        if (!this.elements.syncQRModal) return;
+
+        if (typeof LZString === 'undefined') {
+            this.showToast('Error: librería de compresión no cargada. Recarga la página.');
+            return;
+        }
+
+        const token = this.generateSyncToken();
+        const syncURL = `${window.location.origin}${window.location.pathname}?sync=${token}`;
+        const qrURL = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(syncURL)}&ecc=L&margin=10`;
+
+        if (this.elements.syncQRImage) {
+            this.elements.syncQRImage.src = qrURL;
+            this.elements.syncQRImage.alt = 'Código QR de sincronización';
+        }
+
+        this.elements.syncQRModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    /**
+     * Cierra el modal de sincronización QR y limpia la imagen para liberar recursos.
+     */
+    closeSyncQRModal() {
+        if (!this.elements.syncQRModal) return;
+        this.elements.syncQRModal.style.display = 'none';
+        document.body.style.overflow = '';
+        // Limpiar src para evitar petición de red residual
+        if (this.elements.syncQRImage) this.elements.syncQRImage.src = '';
+    }
+
+    // ─── Exportación / Importación JSON ─────────────────────────────────────
+
     exportProgress(){
         // Backup 2.0 - Exportación integral de todo el estado
         const exportData = {
