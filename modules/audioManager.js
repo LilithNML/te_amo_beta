@@ -525,36 +525,4 @@ export class AudioManager {
             osc.stop(now + i * 0.15 + 0.15);
         });
     }
-
-    // ─────────────────────────────────────────────
-    //  QUICK-TAP FAVORITE — Chime ascendente (sparkle)
-    // ─────────────────────────────────────────────
-
-    playFavoriteChime() {
-        if (!this.audioContext) this.initAudioContext();
-        if (!this.audioContext) return;
-        const now = this.audioContext.currentTime;
-        // Secuencia de notas ascendentes tipo "sparkle/chime"
-        const notes = [
-            { freq: 523.25, t: 0.00 },   // C5
-            { freq: 659.25, t: 0.08 },   // E5
-            { freq: 783.99, t: 0.16 },   // G5
-            { freq: 1046.50, t: 0.24 }   // C6
-        ];
-        notes.forEach(({ freq, t }) => {
-            const osc  = this.audioContext.createOscillator();
-            const gain = this.audioContext.createGain();
-            osc.type = "sine";
-            osc.frequency.setValueAtTime(freq, now + t);
-            // Pequeño portamento ascendente por nota
-            osc.frequency.linearRampToValueAtTime(freq * 1.04, now + t + 0.12);
-            gain.gain.setValueAtTime(0, now + t);
-            gain.gain.linearRampToValueAtTime(0.22, now + t + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + t + 0.18);
-            osc.connect(gain);
-            gain.connect(this.masterGain);
-            osc.start(now + t);
-            osc.stop(now + t + 0.20);
-        });
-    }
 }
