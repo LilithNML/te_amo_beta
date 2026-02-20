@@ -72,6 +72,11 @@
           <span>Importar Progreso</span>
           <small>Cargar desde archivo JSON</small>
         </button>
+        <button id="menuSyncQR" class="backup-option-btn backup-option-btn--qr">
+          <i class="fas fa-qrcode"></i>
+          <span>Sincronizar por QR</span>
+          <small>Transfiere tu progreso entre dispositivos</small>
+        </button>
       </div>
       <button id="closeBackupSubmenu" class="button small-button">
         <i class="fas fa-times"></i> Cerrar
@@ -301,6 +306,38 @@
   <!-- NO más elementos de audio HTML (sonidos se generan con Web Audio API) -->
   <audio id="bgMusic" preload="auto"></audio>
 
+  <!-- MODAL: Sincronización por QR -->
+  <div id="syncQRModal" class="sync-modal-overlay" style="display:none;">
+    <div class="sync-modal-content">
+      <div class="sync-modal-header">
+        <h2><i class="fas fa-qrcode"></i> Sincronizar Progreso</h2>
+        <button id="closeSyncQRModal" class="close-modal-btn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <p class="sync-modal-desc">
+        Escanea este código QR desde el otro dispositivo para importar tu progreso.
+        El proceso fusionará los datos sin borrar los avances existentes.
+      </p>
+      <div class="sync-qr-wrapper" id="syncQRWrapper">
+        <img id="syncQRImage" src="" alt="Código QR de sincronización" />
+      </div>
+      <p class="sync-modal-hint">
+        <i class="fas fa-info-circle"></i>
+        El QR incluye: secretos desbloqueados, favoritos, logros y racha.
+      </p>
+      <div class="sync-modal-actions">
+        <button id="syncCopyURL" class="button small-button">
+          <i class="fas fa-copy"></i> Copiar enlace
+        </button>
+        <button id="closeSyncQRModalBtn" class="button small-button">
+          <i class="fas fa-times"></i> Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
   <script type="module" src="main.js"></script>
   <script>
     if ("serviceWorker" in navigator) {
