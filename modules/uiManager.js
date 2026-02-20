@@ -1,10 +1,12 @@
 /**
  * modules/uiManager.js
  * Versión Final Producción: Streaming Seguro + Glassmorphism (Sin Easter Eggs)
+ * Actualizado: Iconos SVG en lugar de emojis
  */
 
 import { normalizeText } from './utils.js';
 import { descifrarArchivo } from './webCryptoDecryptor.js';
+import { getSVGIcon } from './svgIcons.js';
 
 export class UIManager {
         constructor(herramientas, oraclePhrases) {
@@ -887,7 +889,7 @@ export class UIManager {
                 li.onclick=()=>{if(this.onCodeSelected)this.onCodeSelected(code);this.elements.contentDiv.scrollIntoView({behavior:'smooth'});}; li.appendChild(fb);
             }else{
                 li.className="lista-codigo-item locked"; li.innerHTML=`<div style="flex-grow:1;display:flex;align-items:center;"><i class="fas fa-lock lock-icon"></i><div><span class="codigo-text">??????</span><span class="category" style="opacity:0.5">${d.categoria||'Secreto'}</span></div></div>`;
-                li.onclick=()=>this.showToast("🔒 ¡Sigue buscando!");
+                li.onclick=()=>this.showToast(`${getSVGIcon('lock')} ¡Sigue buscando!`);
             }
             this.elements.unlockedList.appendChild(li);
         });
@@ -935,7 +937,7 @@ export class UIManager {
         a.download=`backup_completo_${new Date().toISOString().slice(0,10)}.json`;
         a.click();
         URL.revokeObjectURL(u);
-        this.showToast("✨ Backup completo exportado");
+        this.showToast(`${getSVGIcon('sparkles')} Backup completo exportado`);
     }
     handleImportFile(f){const r=new FileReader();r.onload=(e)=>{try{const d=JSON.parse(e.target.result);if(this.onImportData)this.onImportData(d);}catch(z){this.showToast("Archivo inválido");}};r.readAsText(f);}
 
@@ -1223,7 +1225,7 @@ export class UIManager {
         this.elements.oraclePhrase.innerHTML = `
             <span class="oracle-phrase-text">${phrase}</span>
             <span class="oracle-return-message">
-                ${isNewPhrase ? '✨ Esta es tu frase de hoy' : '🌙 Vuelve mañana para un nuevo mensaje'}
+                ${isNewPhrase ? `${getSVGIcon('sparkles')} Esta es tu frase de hoy` : `${getSVGIcon('moon')} Vuelve mañana para un nuevo mensaje`}
             </span>
         `;
         
@@ -1348,7 +1350,7 @@ export class UIManager {
         if (!this.emailsLoaded) {
             const data = await this.loadEmailsData();
             if (!data) {
-                this.showToast("❌ Error al cargar el buzón");
+                this.showToast(`${getSVGIcon('error', 'icon-error-color')} Error al cargar el buzón`);
                 return;
             }
         }
@@ -1502,8 +1504,9 @@ export class UIManager {
         const isEncrypted = attachment.type.includes('encrypted');
         
         if (isEncrypted) {
-            // Mostrar input de contraseña
-            const password = prompt(`🔒 Este archivo está protegido.\n\nArchivo: ${attachment.name}\n\nIngresa la contraseña:`);
+            // Mostrar input de contraseña con icono SVG
+            const lockIconText = '🔒'; // Usaremos el emoji en el prompt nativo ya que no podemos renderizar SVG en prompt()
+            const password = prompt(`${lockIconText} Este archivo está protegido.\n\nArchivo: ${attachment.name}\n\nIngresa la contraseña:`);
             
             if (!password) return;
             
@@ -1528,7 +1531,7 @@ export class UIManager {
                 );
                 
                 if (blob) {
-                    this.showToast("✅ Archivo desbloqueado");
+                    this.showToast(`${getSVGIcon('success', 'icon-success-color')} Archivo desbloqueado`);
                     this.triggerConfetti();
                     
                     // Ocultar barra de progreso
