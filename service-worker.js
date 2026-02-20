@@ -1,4 +1,4 @@
-const CACHE_NAME = "turegalo-cache-v7.1"; // Subimos versión para forzar actualización
+const CACHE_NAME = "turegalo-cache-v7.2"; // Subimos versión para forzar actualización
 
 // Usamos rutas relativas para que funcione en cualquier carpeta
 const FILES_TO_CACHE = [
@@ -12,6 +12,7 @@ const FILES_TO_CACHE = [
   "./modules/uiManager.js",
   "./modules/audioManager.js",
   "./modules/gameEngine.js",
+  "./modules/svgIcons.js"
 
   // Audio (verifica que estas carpetas existan en relación al index.html)
   "assets/audio/correct.mp3",
