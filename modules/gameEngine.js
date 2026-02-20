@@ -148,6 +148,7 @@ export class GameEngine {
         }
 
         this.ui.renderContent(data, key);
+        this.ui.currentActiveCode = key; // Necesario para el gesto "Double-Tap to Favorite"
         this.ui.clearInput();
         this.ui.renderUnlockedList(this.unlocked, this.favorites, this.mensajes);
         this.updateAchievementsModal();
